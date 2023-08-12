@@ -1,43 +1,39 @@
-CC = gcc
+.PHONY: shell
+.PHONY: clean
+	
+TOOLCHAIN_NAME=aveferrum/rg35xx-toolchain
+WORKSPACE_DIR := $(shell pwd)/workspace
 
-ifeq ($(shell uname -s), Darwin) # macOS
-    CFLAGS = -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf
-else ifeq ($(shell uname -s), Linux)
-    CFLAGS = -Wall -lSDLmain -lSDL -lSDL_ttf
+CONTAINER_NAME=$(shell docker ps -f "ancestor=$(TOOLCHAIN_NAME)" --format "{{.Names}}")
+BOLD=$(shell tput bold)
+NORM=$(shell tput sgr0)
+
+xcomp: .build
+	docker run -t -v "$(WORKSPACE_DIR)":/root/workspace $(TOOLCHAIN_NAME) ./compile.sh
+
+.build: Dockerfile
+	$(info $(BOLD)Building $(TOOLCHAIN_NAME)...$(NORM))
+	mkdir -p ./workspace
+	docker build -t $(TOOLCHAIN_NAME) .
+	touch .build
+
+ifeq ($(CONTAINER_NAME),)
+shell: .build
+	echo "Found container ${CONTAINER_NAME}"
+	$(info $(BOLD)Starting $(TOOLCHAIN_NAME)...$(NORM))
+	docker run -it --rm -v "$(WORKSPACE_DIR)":/root/workspace $(TOOLCHAIN_NAME) /bin/bash
+else
+shell:
+	echo "No container"
+	$(info $(BOLD)Connecting to running $(TOOLCHAIN_NAME)...$(NORM))
+	docker exec -it $(CONTAINER_NAME) /bin/bash  
 endif
 
-INCLUDES = -Iinclude
-TARGET = simple_menu
-SRCDIR = src
-OBJDIR = obj
-BINDIR = bin
-
-SOURCES = $(wildcard $(SRCDIR)/*.c)
-OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-
-all: $(BINDIR)/$(TARGET)
-
-$(BINDIR)/$(TARGET): $(OBJECTS)
-	@mkdir -p $(@D)
-	$(CC) $^ -o $@ $(CFLAGS)
-
-$(OBJDIR)/%.o: $(SRCDIR)/%.c
-	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
-
-docker_build:
-	docker build -t rgtools .
-
-shell: docker_build
-	docker run -it rgtools /bin/bash
-
-build: docker_build
-	docker run -t rgtools make
-
 clean:
-	rm -rf $(OBJDIR) $(BINDIR)
+	$(info $(BOLD)Removing $(TOOLCHAIN_NAME)...$(NORM))
+	docker rmi $(TOOLCHAIN_NAME)
+	rm -f .build
 
-run: all
-	./$(BINDIR)/$(TARGET)
-
-.PHONY: all
+push:
+	$(info $(BOLD)Pushing $(TOOLCHAIN_NAME)...$(NORM))
+	docker push $(TOOLCHAIN_NAME)
