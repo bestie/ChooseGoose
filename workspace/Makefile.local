@@ -1,0 +1,56 @@
+# export PATH="${PATH}:/opt/miyoo/bin:/opt/miyoo/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/bin"
+# export CROSS_COMPILE=/opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-
+# export PREFIX=/opt/miyoo/
+# export PLATFORM=rg35xx
+# export CC=${CROSS_COMPILE}gcc
+# export AR=${CROSS_COMPILE}ar
+# export AS=${CROSS_COMPILE}as
+# export LD=${CROSS_COMPILE}ld
+# export CXX=${CROSS_COMPILE}g++
+# export HOST=arm-miyoo-linux-uclibcgnueabi
+
+ifeq ($(shell uname -s), Darwin) # macOS
+    CFLAGS = -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf
+		INCLUDES = -Iinclude
+else ifeq ($(shell uname -s), Linux)
+    CFLAGS = -Wall -lSDLmain -lSDL -lSDL_ttf
+		LDFLAGS = -L$(PREFIX)/lib
+		INCLUDES = -I$(PREFIX)/include
+endif
+
+CC = gcc
+
+TARGET = simple_menu_x86
+SRCDIR = src
+OBJDIR = obj
+BINDIR = bin
+
+SOURCES = $(wildcard $(SRCDIR)/*.c)
+OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+
+all: $(BINDIR)/$(TARGET)
+
+$(BINDIR)/$(TARGET): $(OBJECTS)
+	@mkdir -p $(@D)
+	$(CC) $^ -o $@ $(CFLAGS)
+
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+docker_build:
+	docker build -t rgtools .
+
+shell: docker_build
+	docker run -it rgtools /bin/bash
+
+build: docker_build
+	docker run -t rgtools make
+
+clean:
+	rm -rf $(OBJDIR) $(BINDIR)
+
+run: all
+	./$(BINDIR)/$(TARGET)
+
+.PHONY: all
