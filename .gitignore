@@ -2,4 +2,5 @@
 .build
 workspace/obj
 workspace/bin
+workspace/event_log.txt
 RG/SimpleMenu/simple_menu
