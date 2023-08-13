@@ -10,7 +10,7 @@
 # export HOST=arm-miyoo-linux-uclibcgnueabi
 
 ifeq ($(shell uname -s), Darwin) # macOS
-    CFLAGS = -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf
+    CFLAGS = -g -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf
 		INCLUDES = -Iinclude
 else ifeq ($(shell uname -s), Linux)
     CFLAGS = -Wall -lSDLmain -lSDL -lSDL_ttf
@@ -20,10 +20,10 @@ endif
 
 CC = gcc
 
-TARGET = simple_menu_x86
+TARGET = simple_menu
 SRCDIR = src
-OBJDIR = obj
-BINDIR = bin
+OBJDIR = obj/x86
+BINDIR = bin/x86
 
 SOURCES = $(wildcard $(SRCDIR)/*.c)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)

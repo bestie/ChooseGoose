@@ -1,6 +1,7 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_ttf.h>
 #include <stdio.h>
+#include <time.h>
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -19,7 +20,28 @@ SDL_Surface *menuItems[MENU_ITEM_COUNT];
 MenuItem selectedOption = MENU_OPTION_1;
 TTF_Font *font = NULL;
 
+void log_message(const char *filename, const char *message) {
+    FILE *file = fopen(filename, "a");
+    if (!file) {
+        return;
+    }
+
+    time_t t;
+    struct tm *tmp;
+    char timestamp[100];
+
+    time(&t);
+    tmp = localtime(&t);
+
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", tmp);
+
+    fprintf(file, "[%s] %s\n", timestamp, message);
+
+    fclose(file);
+}
+
 void initSDL() {
+    log_message("my_program.log", "SDL initialization started.");
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
     font = TTF_OpenFont("assets/font.ttf", 24); // Adjust the path and size as needed
@@ -95,16 +117,17 @@ void cleanup() {
 }
 
 int main(int argc, char **argv) {
-    printf("Starting up");
-    printf("initSDL");
+    log_message("my_program.log", "Starting program.");
     initSDL();
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        log_message("my_program.log", SDL_GetError());
+    }
 
-    printf("SDL_Event");
+    log_message("my_program.log", "Waiting for event");
     SDL_Event event;
 
     while (1) {
         while (SDL_PollEvent(&event)) {
-            printf("SDL_PollEvent");
             handleInput(event);
         }
 

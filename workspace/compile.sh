@@ -12,7 +12,9 @@ mkdir -p obj
 #endif
 
 # Compile
-/opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-gcc -Wall -I/opt/miyoo/include -c src/main.c -o obj/main.o
+/opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-gcc -g -Wall -I/opt/miyoo/include -c src/main.c -o obj/main.o
 # Link
-/opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-gcc obj/main.o -L/opt/miyoo/lib -lSDL -lSDL_ttf -o bin/simple_menu
+/opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-gcc obj/main.o -g -L/opt/miyoo/lib -lSDL -lSDL_ttf -o bin/simple_menu
+# Static link
+# /opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-gcc obj/main.o -g -L/opt/miyoo/lib /opt/miyoo/lib/libSDL.a /opt/miyoo/lib/libSDL_ttf.a -o bin/simple_menu
 

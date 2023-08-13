@@ -9,22 +9,11 @@ BOLD=$(shell tput bold)
 NORM=$(shell tput sgr0)
 
 xcomp: .build
+	docker run -it --rm -v "$(WORKSPACE_DIR)":/root/workspace $(TOOLCHAIN_NAME) ./compile.sh
 
-test: $(WORKSPACE_DIR)/bin/x86/simple_menu
-	$(WORKSPACE_DIR)/bin/x86/simple_menu
-
-CC=gcc
-CFLAGS = -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf
-INCLUDES = -I$(PREFIX)/include
-
-$(WORKSPACE_DIR)/bin/x86/simple_menu:
-	# $(CC) $^ -o $@ $(CFLAGS)
-	# $(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
-	gcc -Wall -Iinclude -c "$(WORKSPACE_DIR)/src/main.c" -o "$(WORKSPACE_DIR)/obj/x86/main.o"
-	gcc "$(WORKSPACE_DIR)/obj/x86/main.o" -o "$(WORKSPACE_DIR)/bin/x86/simple_menu -Wall -lSDL -lSDL_ttf
-
-$(WORKSPACE_DIR)/bin/arm/simple_menu: .build
-	docker run -t -v "$(WORKSPACE_DIR)":/root/workspace $(TOOLCHAIN_NAME) ./compile.sh
+deploy:
+	cp ./workspace/bin/simple_menu RG/SimpleMenu/
+	adb push RG/* /mnt/mmc/Roms/APPS
 
 .build: Dockerfile
 	$(info $(BOLD)Building $(TOOLCHAIN_NAME)...$(NORM))
@@ -41,7 +30,7 @@ else
 shell:
 	echo "No container"
 	$(info $(BOLD)Connecting to running $(TOOLCHAIN_NAME)...$(NORM))
-	docker exec -it $(CONTAINER_NAME) /bin/bash  
+	docker exec -it $(CONTAINER_NAME) /bin/bash
 endif
 
 clean:
