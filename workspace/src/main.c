@@ -6,6 +6,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "config.h"
+
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
 #define MENU_ITEM_COUNT 3
@@ -25,6 +27,7 @@ SDL_Surface *menuItems[MENU_ITEM_COUNT];
 MenuItem selectedOption = MENU_OPTION_1;
 TTF_Font *font = NULL;
 SDL_Joystick *joystick = NULL;
+Config *config;
 
 void log_event(const char *format, ...) {
   // Open a log file for appending
@@ -83,8 +86,20 @@ void quit(int exit_code) {
 }
 
 void loadMenuItems() {
-  SDL_Color selectedColor = {255, 255, 255};
-  SDL_Color unselectedColor = {100, 100, 100};
+  SDL_Color unselectedColor = {255, 0, 255};
+
+  /* printf("setting selectedColor %d %d %d",  */
+  /*     global_config.text_selected_color.r, */
+  /*     global_config.text_selected_color.g, */
+  /*     global_config.text_selected_color.b */
+  /*   ); */
+
+  SDL_Color selectedColor = {
+      (Uint8)global_config.text_color.r,
+      (Uint8)global_config.text_color.g,
+      (Uint8)global_config.text_color.b,
+  };
+
   SDL_Surface *tempSurface;
 
   for (int i = 0; i < MENU_ITEM_COUNT; i++) {
@@ -191,7 +206,10 @@ void handleInput(SDL_Event event) {
 }
 
 void render() {
-  SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
+  SDL_FillRect(screen, NULL,
+               SDL_MapRGB(screen->format, global_config.background_color.r,
+                          global_config.background_color.g,
+                          global_config.background_color.b));
 
   for (int i = 0; i < MENU_ITEM_COUNT; i++) {
     SDL_Rect dest;
@@ -208,6 +226,10 @@ void render() {
 }
 
 int main(int argc, char **argv) {
+  Config global_config;
+  config_set_defaults(&global_config);
+  /* config_load("./config.txt", &global_config); */
+
   log_event("Starting up");
   initSDL();
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
