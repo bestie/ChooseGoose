@@ -9,6 +9,21 @@ BOLD=$(shell tput bold)
 NORM=$(shell tput sgr0)
 
 xcomp: .build
+
+test: $(WORKSPACE_DIR)/bin/x86/simple_menu
+	$(WORKSPACE_DIR)/bin/x86/simple_menu
+
+CC=gcc
+CFLAGS = -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf
+INCLUDES = -I$(PREFIX)/include
+
+$(WORKSPACE_DIR)/bin/x86/simple_menu:
+	# $(CC) $^ -o $@ $(CFLAGS)
+	# $(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	gcc -Wall -Iinclude -c "$(WORKSPACE_DIR)/src/main.c" -o "$(WORKSPACE_DIR)/obj/x86/main.o"
+	gcc "$(WORKSPACE_DIR)/obj/x86/main.o" -o "$(WORKSPACE_DIR)/bin/x86/simple_menu -Wall -lSDL -lSDL_ttf
+
+$(WORKSPACE_DIR)/bin/arm/simple_menu: .build
 	docker run -t -v "$(WORKSPACE_DIR)":/root/workspace $(TOOLCHAIN_NAME) ./compile.sh
 
 .build: Dockerfile
