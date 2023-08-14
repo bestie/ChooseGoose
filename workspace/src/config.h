@@ -15,7 +15,7 @@ typedef struct {
   char option_command[3][256];
 } Config;
 
-extern Config global_config;
+// extern Config global_config;
 
 void config_set_defaults(Config *config);
 int config_load(const char *filename, Config *config);

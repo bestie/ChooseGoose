@@ -27,7 +27,12 @@ SDL_Surface *menuItems[MENU_ITEM_COUNT];
 MenuItem selectedOption = MENU_OPTION_1;
 TTF_Font *font = NULL;
 SDL_Joystick *joystick = NULL;
-Config *config;
+
+static int global_config() {
+  Config config = { };
+
+  return *config;
+}
 
 void log_event(const char *format, ...) {
   // Open a log file for appending
@@ -86,18 +91,26 @@ void quit(int exit_code) {
 }
 
 void loadMenuItems() {
-  SDL_Color unselectedColor = {255, 0, 255};
+  fprintf(stderr, "load menu: text color r = `%d`", global_config().text_color.r);
+  fprintf(stderr, "load menu: text color g = `%d`", global_config().text_color.g);
+  fprintf(stderr, "load menu: text color b = `%d`", global_config().text_color.b);
+
+  SDL_Color unselectedColor = {
+    global_config().text_color.r,
+    global_config().text_color.g,
+    global_config().text_color.b,
+  };
 
   /* printf("setting selectedColor %d %d %d",  */
-  /*     global_config.text_selected_color.r, */
-  /*     global_config.text_selected_color.g, */
-  /*     global_config.text_selected_color.b */
+  /*     global_config().text_selected_color.r, */
+  /*     global_config().text_selected_color.g, */
+  /*     global_config().text_selected_color.b */
   /*   ); */
 
   SDL_Color selectedColor = {
-      (Uint8)global_config.text_color.r,
-      (Uint8)global_config.text_color.g,
-      (Uint8)global_config.text_color.b,
+      global_config().text_selected_color.r,
+      global_config().text_selected_color.g,
+      global_config().text_selected_color.b,
   };
 
   SDL_Surface *tempSurface;
@@ -207,9 +220,9 @@ void handleInput(SDL_Event event) {
 
 void render() {
   SDL_FillRect(screen, NULL,
-               SDL_MapRGB(screen->format, global_config.background_color.r,
-                          global_config.background_color.g,
-                          global_config.background_color.b));
+               SDL_MapRGB(screen->format, global_config().background_color.r,
+                          global_config().background_color.g,
+                          global_config().background_color.b));
 
   for (int i = 0; i < MENU_ITEM_COUNT; i++) {
     SDL_Rect dest;
@@ -226,8 +239,9 @@ void render() {
 }
 
 int main(int argc, char **argv) {
-  Config global_config;
-  config_set_defaults(&global_config);
+  fprintf(stderr, "Setting defaults\n");
+  config_set_defaults(&global_config());
+  fprintf(stderr, "Defaults set\n");
   /* config_load("./config.txt", &global_config); */
 
   log_event("Starting up");
@@ -250,6 +264,10 @@ int main(int argc, char **argv) {
 
   log_event("Waiting for event");
   SDL_Event event;
+
+  /* fprintf(stderr, "text color r = `%d`", global_config().text_color.r); */
+  /* fprintf(stderr, "text color g = `%d`", global_config().text_color.g); */
+  /* fprintf(stderr, "text color b = `%d`", global_config().text_color.b); */
 
   while (1) {
     while (SDL_PollEvent(&event)) {
