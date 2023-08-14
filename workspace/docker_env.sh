@@ -1,4 +1,3 @@
-echo "Env setup :)"
 export PATH="${PATH}:/opt/miyoo/bin:/opt/miyoo/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/bin"
 export CROSS_COMPILE=/opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-
 export PREFIX=/opt/miyoo/

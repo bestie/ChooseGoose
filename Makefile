@@ -5,9 +5,10 @@ BIN_DIR=$(WORKSPACE_DIR)/bin
 DESTINATION_DIR=RG/SimpleMenu/bin
 
 .PHONY: cross_compile
-xcompile: docker_build
-	docker run -it --rm -v "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash --login -c make
-	cp -r $(BIN_DIR) $(DESTINATION_DIR)
+cross_compile: docker_build
+	docker run --interactive --rm --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash --login -c make
+	mkdir -p $(DESTINATION_DIR)
+	cp $(BIN_DIR)/* $(DESTINATION_DIR)
 
 .PHONY: push
 push: xcomp

@@ -1,3 +1,7 @@
+# This Makefile is for compiling it natively for testing
+#
+# Run with make -f <file name>
+
 ifeq ($(shell uname -s), Darwin) # macOS
     CFLAGS = -g -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf
 else ifeq ($(shell uname -s), Linux)
