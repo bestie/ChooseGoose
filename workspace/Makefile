@@ -1,4 +1,7 @@
-# Use the provided environment variables
+# This Makefile is only for running in the Docker container to do the cross compilation
+#
+# Requires the environment variables from docker_env.sh
+
 CC = $(CROSS_COMPILE)gcc
 CXX = $(CROSS_COMPILE)g++
 LD = $(CROSS_COMPILE)ld
@@ -21,22 +24,15 @@ all: $(BINDIR)/$(TARGET)
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
 	mkdir -p $(@D)
-	/opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-gcc obj/main.o -L/opt/miyoo/lib -lSDL -lSDL_ttf -o bin/simple_menu
-	# $(CC) $(LDFLAGS) $^ -o $@ $(CFLAGS)
+	# /opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-gcc obj/main.o -g -L/opt/miyoo/lib -lSDL -lSDL_ttf -o bin/simple_menu
+	$(CC) $(LDFLAGS) $^ -o $@ $(CFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	mkdir -p $(@D)
-	/opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-gcc -Wall -I/opt/miyoo/include -c src/main.c -o obj/main.o
-	# $(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	# /opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-gcc -g -Wall -I/opt/miyoo/include -c src/main.c -o obj/main.o
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
 	rm -rf $(OBJDIR) $(BINDIR)
-
-print:
-	echo "BINDIR = ${BINDIR}"
-	echo "TARGET = ${TARGET}"
-	echo "SRCDIR = ${SRCDIR}"
-	echo "OBJDIR = ${OBJDIR}"
-	echo "BINDIR = ${BINDIR}"
 
 .PHONY: all clean

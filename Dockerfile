@@ -16,10 +16,7 @@ WORKDIR /root/build/
 # Build and install SDL
 RUN ./build-sdl.sh
 
-RUN cat ./setup-env.sh >> /root/.bashrc
-
+RUN cat setup-env.sh >> /root/.bashrc
 WORKDIR /root/workspace
-COPY workspace/.bashrc .
-RUN cat .bashrc >> /root/bashrc
 
 CMD ["/bin/bash"]
