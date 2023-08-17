@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Config global_config;
-
 void config_set_defaults(Config *config) {
   config->background_color.r = 255;
   config->background_color.g = 0;
@@ -14,8 +12,6 @@ void config_set_defaults(Config *config) {
   config->text_color.g = 255;
   config->text_color.b = 255;
 
-  fprintf(stderr, "********************************************    was ere");
-  fprintf(stderr, "******************************************** %d", config->text_color.r);
   config->text_selected_color.r = 100;
   config->text_selected_color.g = 100;
   config->text_selected_color.b = 100;

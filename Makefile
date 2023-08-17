@@ -10,6 +10,9 @@ cross_compile: docker_build
 	mkdir -p $(DESTINATION_DIR)
 	cp $(BIN_DIR)/* $(DESTINATION_DIR)
 
+test:
+	cd workspace && make -f Makefile.local && ls ../example/roms | binx64/simple_menu
+
 .PHONY: push
 push: xcomp
 	cp ./workspace/bin/simple_menu RG/SimpleMenu/

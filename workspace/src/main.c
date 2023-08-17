@@ -6,15 +6,14 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "SDL/SDL_video.h"
 #include "config.h"
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
-#define MENU_ITEM_COUNT 3
-#define MENU_ITEM_HEIGHT 50
-#define MENU_ITEM_WIDTH 200
-
-typedef enum { MENU_OPTION_1, MENU_OPTION_2, MENU_OPTION_3 } MenuItem;
+#define MENU_ITEM_HEIGHT 25
+#define MENU_ITEM_WIDTH 600
+#define FONT_SIZE 18
 
 #define BUTTON_A 0
 #define BUTTON_B 1
@@ -23,15 +22,41 @@ typedef enum { MENU_OPTION_1, MENU_OPTION_2, MENU_OPTION_3 } MenuItem;
 #define BUTTON_MENU 9
 
 SDL_Surface *screen;
-SDL_Surface *menuItems[MENU_ITEM_COUNT];
-MenuItem selectedOption = MENU_OPTION_1;
 TTF_Font *font = NULL;
 SDL_Joystick *joystick = NULL;
 
-static int global_config() {
-  Config config = { };
+int selected_index = 0;
+char **menu_items;
 
-  return *config;
+void terminate_at_file_extension(char *filename) {
+  char *dot = strrchr(filename, '.');
+  if (dot) {
+    *dot = '\0';
+  }
+}
+
+void terminate_at_new_line(char *string) {
+  char *newline = strchr(string, '\n');
+  if (newline) {
+    *newline = '\0';
+  }
+}
+
+char **read_lines_from_stdin() {
+  int i = 0;
+  int max_len = 255;
+  char **lines = malloc(sizeof(char *));
+  lines[0] = malloc(max_len * sizeof(char));
+
+  while (fgets(lines[i], max_len, stdin)) {
+    terminate_at_new_line(lines[i]);
+    i++;
+    lines = realloc(lines, (i + 1) * sizeof(char *));
+    lines[i] = malloc(max_len * sizeof(char));
+  }
+  lines[i] = 0;
+
+  return lines;
 }
 
 void log_event(const char *format, ...) {
@@ -40,7 +65,6 @@ void log_event(const char *format, ...) {
   if (!logFile)
     return;
 
-  // Get the current time
   time_t currentTime;
   struct tm *timeInfo;
   char timeBuffer[20];
@@ -52,16 +76,14 @@ void log_event(const char *format, ...) {
   // Get the process ID
   pid_t processID = getpid();
 
-  // Write the timestamp and process ID to the log
   fprintf(logFile, "[%s][PID: %d] ", timeBuffer, processID);
 
-  // Write the actual log message
   va_list args;
   va_start(args, format);
   vfprintf(logFile, format, args);
   va_end(args);
 
-  fprintf(logFile, "\n"); // Add a newline for better readability
+  fprintf(logFile, "\n");
   fclose(logFile);
 }
 
@@ -70,8 +92,10 @@ void initSDL() {
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
   SDL_ShowCursor(SDL_DISABLE);
-  font =
-      TTF_OpenFont("assets/font.ttf", 24); // Adjust the path and size as needed
+  font = TTF_OpenFont("assets/font.ttf", FONT_SIZE);
+  int height;
+  height = TTF_FontHeight(font);
+  fprintf(stderr, "font height = %d", height);
   screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, 32, SDL_SWSURFACE);
   SDL_WM_SetCaption("Simple Menu", NULL);
 }
@@ -90,57 +114,41 @@ void quit(int exit_code) {
   exit(exit_code);
 }
 
-void loadMenuItems() {
-  fprintf(stderr, "load menu: text color r = `%d`", global_config().text_color.r);
-  fprintf(stderr, "load menu: text color g = `%d`", global_config().text_color.g);
-  fprintf(stderr, "load menu: text color b = `%d`", global_config().text_color.b);
+struct SDL_Surface create_menu_item(Config config, char *text, int selected) {
+  SDL_Color unselectedColor;
+  SDL_Color selectedColor;
 
-  SDL_Color unselectedColor = {
-    global_config().text_color.r,
-    global_config().text_color.g,
-    global_config().text_color.b,
-  };
-
-  /* printf("setting selectedColor %d %d %d",  */
-  /*     global_config().text_selected_color.r, */
-  /*     global_config().text_selected_color.g, */
-  /*     global_config().text_selected_color.b */
-  /*   ); */
-
-  SDL_Color selectedColor = {
-      global_config().text_selected_color.r,
-      global_config().text_selected_color.g,
-      global_config().text_selected_color.b,
-  };
+  unselectedColor.r = config.text_color.r;
+  unselectedColor.g = config.text_color.g;
+  unselectedColor.b = config.text_color.b;
+  selectedColor.r = config.text_selected_color.r;
+  selectedColor.g = config.text_selected_color.g;
+  selectedColor.b = config.text_selected_color.b;
 
   SDL_Surface *tempSurface;
 
-  for (int i = 0; i < MENU_ITEM_COUNT; i++) {
-    char text[50];
-    snprintf(text, sizeof(text), "Option %d", i + 1);
-    if (i == selectedOption) {
-      tempSurface = TTF_RenderText_Solid(font, text, selectedColor);
-    } else {
-      tempSurface = TTF_RenderText_Solid(font, text, unselectedColor);
-    }
-    menuItems[i] = SDL_DisplayFormat(tempSurface);
-    SDL_FreeSurface(tempSurface);
+  if (selected) {
+    tempSurface = TTF_RenderText_Solid(font, text, selectedColor);
+  } else {
+    tempSurface = TTF_RenderText_Solid(font, text, unselectedColor);
   }
+  return *SDL_DisplayFormat(tempSurface);
 }
 
 void menu_down() {
-  if (selectedOption > 0) {
-    selectedOption--;
+  if (selected_index > 0) {
+    selected_index--;
   }
 }
 
 void menu_up() {
-  if (selectedOption < MENU_ITEM_COUNT - 1) {
-    selectedOption++;
-  }
+  // if (selected_index < sizeof(menu_items) - 1) {
+  selected_index++;
+  // }
 }
+
 void menu_confirm() {
-  printf("Selected option: %d\n", selectedOption + 1);
+  printf("Selected option: %s\n", menu_items[selected_index]);
   quit(0);
 }
 
@@ -218,30 +226,38 @@ void handleInput(SDL_Event event) {
   }
 }
 
-void render() {
+void render(Config config) {
   SDL_FillRect(screen, NULL,
-               SDL_MapRGB(screen->format, global_config().background_color.r,
-                          global_config().background_color.g,
-                          global_config().background_color.b));
+               SDL_MapRGB(screen->format, config.background_color.r,
+                          config.background_color.g,
+                          config.background_color.b));
 
-  for (int i = 0; i < MENU_ITEM_COUNT; i++) {
+  int v_padding = 10;
+  int visible_menu_item_count =
+      (SCREEN_HEIGHT - (v_padding * 2)) / MENU_ITEM_HEIGHT;
+
+  for (int i = 0; i < visible_menu_item_count; i++) {
+    char *text = menu_items[i];
     SDL_Rect dest;
-    dest.x = (SCREEN_WIDTH - MENU_ITEM_WIDTH) / 2;
-    dest.y = (SCREEN_HEIGHT - (MENU_ITEM_COUNT * MENU_ITEM_HEIGHT)) / 2 +
-             (i * MENU_ITEM_HEIGHT);
+    dest.x = 10;
+    dest.y = v_padding + (MENU_ITEM_HEIGHT * i);
+    // dest.x = (SCREEN_WIDTH - MENU_ITEM_WIDTH) / 2;
+    // dest.y = (SCREEN_HEIGHT - (MENU_ITEM_COUNT * MENU_ITEM_HEIGHT)) / 2 +
+    //          (i * MENU_ITEM_HEIGHT);
     dest.w = MENU_ITEM_WIDTH;
     dest.h = MENU_ITEM_HEIGHT;
 
-    SDL_BlitSurface(menuItems[i], NULL, screen, &dest);
+    SDL_Surface menu_item = create_menu_item(config, text, i == selected_index);
+    SDL_BlitSurface(&menu_item, NULL, screen, &dest);
   }
 
   SDL_Flip(screen);
 }
 
 int main(int argc, char **argv) {
-  fprintf(stderr, "Setting defaults\n");
-  config_set_defaults(&global_config());
-  fprintf(stderr, "Defaults set\n");
+  Config config;
+
+  config_set_defaults(&config);
   /* config_load("./config.txt", &global_config); */
 
   log_event("Starting up");
@@ -265,17 +281,14 @@ int main(int argc, char **argv) {
   log_event("Waiting for event");
   SDL_Event event;
 
-  /* fprintf(stderr, "text color r = `%d`", global_config().text_color.r); */
-  /* fprintf(stderr, "text color g = `%d`", global_config().text_color.g); */
-  /* fprintf(stderr, "text color b = `%d`", global_config().text_color.b); */
+  menu_items = read_lines_from_stdin();
+  selected_index = 0;
 
   while (1) {
     while (SDL_PollEvent(&event)) {
       handleInput(event);
     }
-
-    loadMenuItems();
-    render();
+    render(config);
   }
 
   return 0;
