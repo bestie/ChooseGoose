@@ -96,7 +96,6 @@ void log_event(const char *format, ...) {
   pid_t processID = getpid();
 
   fprintf(output, "[%s][PID: %d] %s\n", time_buffer, processID, message);
-  // fclose(output);
 }
 
 void initSDL() {
@@ -303,12 +302,15 @@ int main(int argc, char **argv) {
 
   log_event("SDL waiting for event");
   SDL_Event event;
+  int poll_result;
 
   while (1) {
-    while (SDL_PollEvent(&event)) {
+    poll_result = SDL_PollEvent(&event);
+    if (poll_result) {
+      log_event("User input event type=%d", event.type);
       handleInput(event);
+      render(config);
     }
-    render(config);
   }
 
   return 0;
