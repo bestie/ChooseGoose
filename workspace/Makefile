@@ -10,7 +10,7 @@ AS = $(CROSS_COMPILE)as
 
 CFLAGS = -Wall
 INCLUDES = -I$(PREFIX)/include
-LDFLAGS = -L$(PREFIX)/lib -lSDL -lSDL_ttf
+LDFLAGS = -L$(PREFIX)/lib -lSDL -lSDL_ttf -lyaml
 
 TARGET = simple_menu
 SRCDIR = src
