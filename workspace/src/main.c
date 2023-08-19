@@ -155,18 +155,19 @@ struct SDL_Surface create_menu_item(Config config, char *text, int selected) {
 }
 
 void menu_move_selection(int increment) {
-  log_event("Moving from %d by %d with %d menu items", selected_index,
-            increment, menu_items.count);
+  int from;
+  from = selected_index;
   selected_index = (selected_index + increment) % menu_items.count;
   if (selected_index < 0) {
     selected_index = menu_items.count - 1;
   }
-  log_event("Moved to %d with %d menu items", selected_index);
+  log_event("Moved to from %d to %d", from, selected_index);
 }
 
 void menu_confirm() {
   log_event("Selection confirmed item=%d/%d - `%s`", selected_index,
             menu_items.count, menu_items.lines[selected_index]);
+  fprintf(stdout, "%s\n", menu_items.lines[selected_index]);
   quit(0);
 }
 
@@ -230,7 +231,9 @@ void handle_key_press(SDL_Event event) {
   }
 }
 
-void handleInput(SDL_Event event) {
+int handleInput(SDL_Event event) {
+  int event_handled = 1;
+
   switch (event.type) {
   case SDL_JOYHATMOTION:
     handle_dpad(event.jhat);
@@ -241,7 +244,10 @@ void handleInput(SDL_Event event) {
   case SDL_KEYDOWN:
     handle_key_press(event);
     break;
+  default:
+    event_handled = 0;
   }
+  return event_handled;
 }
 
 void render(Config config) {
@@ -254,20 +260,35 @@ void render(Config config) {
   int visible_menu_item_count =
       (SCREEN_HEIGHT - (v_padding * 2)) / MENU_ITEM_HEIGHT;
 
+  int visible_menu_start = selected_index - (visible_menu_item_count / 2);
+  if (visible_menu_start < 0)
+    visible_menu_start = 0;
+  if (visible_menu_start + visible_menu_item_count > menu_items.count) {
+    visible_menu_start = menu_items.count - visible_menu_item_count;
+  }
+
+  int menu_index, selected_state = 0;
+
   for (int i = 0; i < visible_menu_item_count; i++) {
-    if (menu_items.lines[i] == NULL)
+    menu_index = visible_menu_start + i;
+    if (menu_items.lines[menu_index] == NULL)
       break;
 
-    char *text = menu_items.lines[i];
+    char text[255];
+    sprintf(text, "%d. %s", menu_index, menu_items.lines[menu_index]);
+    selected_state = selected_index == menu_index;
+
     SDL_Rect dest;
     dest.x = 10;
     dest.y = v_padding + (MENU_ITEM_HEIGHT * i);
     dest.w = MENU_ITEM_WIDTH;
     dest.h = MENU_ITEM_HEIGHT;
 
-    SDL_Surface menu_item = create_menu_item(config, text, i == selected_index);
+    SDL_Surface menu_item = create_menu_item(config, text, selected_state);
     SDL_BlitSurface(&menu_item, NULL, screen, &dest);
   }
+  log_event("Rendered %d items from %d-%d", visible_menu_item_count,
+            visible_menu_start, visible_menu_start + visible_menu_item_count);
 
   SDL_Flip(screen);
 }
@@ -304,12 +325,14 @@ int main(int argc, char **argv) {
   SDL_Event event;
   int poll_result;
 
+  render(config);
   while (1) {
     poll_result = SDL_PollEvent(&event);
     if (poll_result) {
-      log_event("User input event type=%d", event.type);
-      handleInput(event);
-      render(config);
+      if (handleInput(event)) {
+        log_event("User input event type=%d", event.type);
+        render(config);
+      }
     }
   }
 
