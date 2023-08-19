@@ -104,7 +104,7 @@ void log_event(const char *format, ...) {
   fprintf(output, "[%s][PID: %d] %s\n", time_buffer, processID, message);
 }
 
-void initSDL(Config config) {
+void initSDL() {
   log_event("SDL initialization started.");
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
@@ -144,7 +144,7 @@ SDL_Surface create_text_surface(char *text, Color color) {
   return *SDL_DisplayFormat(text_surface);
 }
 
-SDL_Surface create_menu_item(Config config, char *text, int selected) {
+SDL_Surface create_menu_item(char *text, int selected) {
   Color color;
   if (selected) {
     color = config.text_selected_color;
@@ -251,7 +251,7 @@ int handleInput(SDL_Event event) {
   return event_handled;
 }
 
-void render(Config config) {
+void render() {
   SDL_FillRect(screen, NULL, background_color);
   if (background_image) {
     SDL_BlitSurface(background_image, NULL, screen, NULL);
@@ -293,7 +293,7 @@ void render(Config config) {
 
     char text[255];
     if (config.prefix_with_number) {
-      sprintf(text, "%3d. %s", menu_index, menu_items.lines[menu_index]);
+      sprintf(text, "%3d. %s", menu_index + 1, menu_items.lines[menu_index]);
     } else {
       sprintf(text, "%s", menu_items.lines[menu_index]);
     }
@@ -305,7 +305,7 @@ void render(Config config) {
     dest.w = SCREEN_WIDTH;
     dest.h = 0;
 
-    SDL_Surface menu_item = create_menu_item(config, text, selected_state);
+    SDL_Surface menu_item = create_menu_item(text, selected_state);
     SDL_BlitSurface(&menu_item, NULL, screen, &dest);
   }
   log_event("Rendered %d items from %d-%d", visible_menu_item_count,
@@ -314,14 +314,14 @@ void render(Config config) {
   SDL_Flip(screen);
 }
 
-void first_render(Config config) {
+void first_render() {
   if (strlen(config.background_image_filepath)) {
     background_image = IMG_Load(config.background_image_filepath);
   }
   background_color =
       SDL_MapRGB(screen->format, config.background_color.r,
                  config.background_color.g, config.background_color.b);
-  render(config);
+  render();
 }
 
 int main(int argc, char **argv) {
@@ -334,12 +334,15 @@ int main(int argc, char **argv) {
   }
   print_config(&config);
 
+  log_event("Setting starting selection to %d", config.start_at_nth - 1);
+  selected_index = config.start_at_nth - 1;
+
   log_event("Reading menu items");
   menu_items = read_lines_from_stdin(0);
   log_event("Read menu items count=%d", menu_items.count);
 
   log_event("SDL starting");
-  initSDL(config);
+  initSDL();
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
     log_event("Unable to init SDL: %s\n", SDL_GetError());
     quit(1);
@@ -358,13 +361,13 @@ int main(int argc, char **argv) {
   SDL_Event event;
   int poll_result;
 
-  first_render(config);
+  first_render();
   while (1) {
     poll_result = SDL_PollEvent(&event);
     if (poll_result) {
       if (handleInput(event)) {
         log_event("User input event type=%d", event.type);
-        render(config);
+        render();
       }
     }
   }
