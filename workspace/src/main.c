@@ -11,6 +11,7 @@
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
+#define BITS_PER_PIXEL 32
 #define MENU_ITEM_HEIGHT 25
 #define MENU_ITEM_WIDTH 600
 #define FONT_SIZE 18
@@ -27,6 +28,7 @@ SDL_Joystick *joystick = NULL;
 
 int selected_index = 0;
 char **menu_items;
+int menu_items_count = 0;
 
 void terminate_at_file_extension(char *filename) {
   char *dot = strrchr(filename, '.');
@@ -42,62 +44,73 @@ void terminate_at_new_line(char *string) {
   }
 }
 
-char **read_lines_from_stdin() {
-  int i = 0;
-  int max_len = 255;
+char **read_lines_from_stdin(int max_line_length) {
+  max_line_length = max_line_length ? max_line_length : 255;
   char **lines = malloc(sizeof(char *));
-  lines[0] = malloc(max_len * sizeof(char));
+  lines[0] = malloc(max_line_length * sizeof(char));
 
-  while (fgets(lines[i], max_len, stdin)) {
+  int i = 0;
+  while (fgets(lines[i], max_line_length, stdin)) {
     terminate_at_new_line(lines[i]);
     i++;
     lines = realloc(lines, (i + 1) * sizeof(char *));
-    lines[i] = malloc(max_len * sizeof(char));
+    lines[i] = malloc(max_line_length * sizeof(char));
   }
-  lines[i] = 0;
+  lines[i] = NULL;
 
   return lines;
 }
 
+FILE *log_target() {
+  if (isatty(fileno(stderr))) {
+    return stderr;
+  } else {
+    return fopen("event_log.txt", "a");
+  }
+}
+
 void log_event(const char *format, ...) {
-  // Open a log file for appending
-  FILE *logFile = fopen("event_log.txt", "a");
-  if (!logFile)
-    return;
+  FILE *output = log_target();
+  char message[255];
 
-  time_t currentTime;
-  struct tm *timeInfo;
-  char timeBuffer[20];
+  time_t current_time;
+  struct tm *time_data;
+  char time_buffer[20];
 
-  time(&currentTime);
-  timeInfo = localtime(&currentTime);
-  strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%d %H:%M:%S", timeInfo);
-
-  // Get the process ID
-  pid_t processID = getpid();
-
-  fprintf(logFile, "[%s][PID: %d] ", timeBuffer, processID);
+  time(&current_time);
+  time_data = localtime(&current_time);
+  strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", time_data);
 
   va_list args;
   va_start(args, format);
-  vfprintf(logFile, format, args);
+  vsprintf(message, format, args);
   va_end(args);
 
-  fprintf(logFile, "\n");
-  fclose(logFile);
+  pid_t processID = getpid();
+
+  fprintf(output, "[%s][PID: %d] %s\n", time_buffer, processID, message);
+  // fclose(output);
 }
 
 void initSDL() {
-  log_event("my_program.log", "SDL initialization started.");
+  char *font_path = "assets/font.ttf";
+  int font_height;
+
+  log_event("SDL initialization started.");
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
   SDL_ShowCursor(SDL_DISABLE);
-  font = TTF_OpenFont("assets/font.ttf", FONT_SIZE);
-  int height;
-  height = TTF_FontHeight(font);
-  fprintf(stderr, "font height = %d", height);
-  screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, 32, SDL_SWSURFACE);
-  SDL_WM_SetCaption("Simple Menu", NULL);
+  log_event("Font loading from %s", font_path);
+  font = TTF_OpenFont(font_path, FONT_SIZE);
+  font_height = TTF_FontHeight(font);
+  log_event("Font loaded size=%d, font_height=%dpx", FONT_SIZE, font_height);
+
+  log_event("SDL_SetVideoMode(SCREEN_WIDTH=%d, SCREEN_HEIGHT=%d, bpp=%d)",
+            SCREEN_WIDTH, SCREEN_HEIGHT, BITS_PER_PIXEL);
+  screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, BITS_PER_PIXEL,
+                            SDL_SWSURFACE);
+
+  SDL_WM_SetCaption("Choose Goose", NULL);
 }
 
 void cleanup() {
@@ -135,20 +148,19 @@ struct SDL_Surface create_menu_item(Config config, char *text, int selected) {
   return *SDL_DisplayFormat(tempSurface);
 }
 
-void menu_down() {
-  if (selected_index > 0) {
-    selected_index--;
+void menu_move_selection(int increment) {
+  log_event("Moving from %d by %d with %d menu items", selected_index,
+            increment, menu_items_count);
+  selected_index = (selected_index + increment) % menu_items_count;
+  if (selected_index < 0) {
+    selected_index = menu_items_count - 1;
   }
-}
-
-void menu_up() {
-  // if (selected_index < sizeof(menu_items) - 1) {
-  selected_index++;
-  // }
+  log_event("Moved to %d with %d menu items", selected_index);
 }
 
 void menu_confirm() {
-  printf("Selected option: %s\n", menu_items[selected_index]);
+  log_event("Selection confirmed item=%d/%d - `%s`", selected_index,
+            menu_items_count, menu_items[selected_index]);
   quit(0);
 }
 
@@ -156,10 +168,10 @@ void handle_dpad(SDL_JoyHatEvent event) {
   log_event("D-Pad movement: hat %d, value: %d", event.hat, event.value);
   switch (event.value) {
   case SDL_HAT_UP:
-    menu_down();
+    menu_move_selection(-1);
     break;
   case SDL_HAT_DOWN:
-    menu_up();
+    menu_move_selection(1);
     break;
   case SDLK_RETURN:
     menu_confirm();
@@ -196,10 +208,10 @@ void handle_key_press(SDL_Event event) {
   log_event("Keyboard keypress: value: %d", event.key.keysym.sym);
   switch (event.key.keysym.sym) {
   case SDLK_UP:
-    menu_down();
+    menu_move_selection(-1);
     break;
   case SDLK_DOWN:
-    menu_up();
+    menu_move_selection(1);
     break;
   case SDLK_RETURN:
     menu_confirm();
@@ -237,13 +249,13 @@ void render(Config config) {
       (SCREEN_HEIGHT - (v_padding * 2)) / MENU_ITEM_HEIGHT;
 
   for (int i = 0; i < visible_menu_item_count; i++) {
+    if (menu_items[i] == NULL)
+      break;
+
     char *text = menu_items[i];
     SDL_Rect dest;
     dest.x = 10;
     dest.y = v_padding + (MENU_ITEM_HEIGHT * i);
-    // dest.x = (SCREEN_WIDTH - MENU_ITEM_WIDTH) / 2;
-    // dest.y = (SCREEN_HEIGHT - (MENU_ITEM_COUNT * MENU_ITEM_HEIGHT)) / 2 +
-    //          (i * MENU_ITEM_HEIGHT);
     dest.w = MENU_ITEM_WIDTH;
     dest.h = MENU_ITEM_HEIGHT;
 
@@ -261,10 +273,18 @@ int main(int argc, char **argv) {
   /* config_load("./config.txt", &global_config); */
 
   log_event("Starting up");
+
+  log_event("Reading menu items");
+  menu_items = read_lines_from_stdin(0);
+  while (menu_items[menu_items_count]) {
+    menu_items_count++;
+  }
+  log_event("Read menu items count=%d", menu_items_count);
+
+  log_event("SDL starting");
   initSDL();
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
     log_event("Unable to init SDL: %s\n", SDL_GetError());
-    fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
     quit(1);
   }
 
@@ -273,16 +293,12 @@ int main(int argc, char **argv) {
     joystick = SDL_JoystickOpen(0);
     if (joystick == NULL) {
       log_event("Unable to open joystick: %s\n", SDL_GetError());
-      fprintf(stderr, "Unable to open joystick: %s\n", SDL_GetError());
       quit(1);
     }
   }
 
-  log_event("Waiting for event");
+  log_event("SDL waiting for event");
   SDL_Event event;
-
-  menu_items = read_lines_from_stdin();
-  selected_index = 0;
 
   while (1) {
     while (SDL_PollEvent(&event)) {
