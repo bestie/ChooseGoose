@@ -26,9 +26,14 @@ SDL_Surface *screen;
 TTF_Font *font = NULL;
 SDL_Joystick *joystick = NULL;
 
+typedef struct {
+  int count;
+  int max_length;
+  char **lines;
+} BunchOfLines;
+
 int selected_index = 0;
-char **menu_items;
-int menu_items_count = 0;
+BunchOfLines menu_items;
 
 void terminate_at_file_extension(char *filename) {
   char *dot = strrchr(filename, '.');
@@ -44,9 +49,10 @@ void terminate_at_new_line(char *string) {
   }
 }
 
-char **read_lines_from_stdin(int max_line_length) {
-  max_line_length = max_line_length ? max_line_length : 255;
+BunchOfLines read_lines_from_stdin(int max_line_length) {
   char **lines = malloc(sizeof(char *));
+
+  max_line_length = max_line_length ? max_line_length : 255;
   lines[0] = malloc(max_line_length * sizeof(char));
 
   int i = 0;
@@ -58,7 +64,8 @@ char **read_lines_from_stdin(int max_line_length) {
   }
   lines[i] = NULL;
 
-  return lines;
+  BunchOfLines bunch = {i - 1, max_line_length, lines};
+  return bunch;
 }
 
 FILE *log_target() {
@@ -150,17 +157,17 @@ struct SDL_Surface create_menu_item(Config config, char *text, int selected) {
 
 void menu_move_selection(int increment) {
   log_event("Moving from %d by %d with %d menu items", selected_index,
-            increment, menu_items_count);
-  selected_index = (selected_index + increment) % menu_items_count;
+            increment, menu_items.count);
+  selected_index = (selected_index + increment) % menu_items.count;
   if (selected_index < 0) {
-    selected_index = menu_items_count - 1;
+    selected_index = menu_items.count - 1;
   }
   log_event("Moved to %d with %d menu items", selected_index);
 }
 
 void menu_confirm() {
   log_event("Selection confirmed item=%d/%d - `%s`", selected_index,
-            menu_items_count, menu_items[selected_index]);
+            menu_items.count, menu_items.lines[selected_index]);
   quit(0);
 }
 
@@ -249,10 +256,10 @@ void render(Config config) {
       (SCREEN_HEIGHT - (v_padding * 2)) / MENU_ITEM_HEIGHT;
 
   for (int i = 0; i < visible_menu_item_count; i++) {
-    if (menu_items[i] == NULL)
+    if (menu_items.lines[i] == NULL)
       break;
 
-    char *text = menu_items[i];
+    char *text = menu_items.lines[i];
     SDL_Rect dest;
     dest.x = 10;
     dest.y = v_padding + (MENU_ITEM_HEIGHT * i);
@@ -276,10 +283,7 @@ int main(int argc, char **argv) {
 
   log_event("Reading menu items");
   menu_items = read_lines_from_stdin(0);
-  while (menu_items[menu_items_count]) {
-    menu_items_count++;
-  }
-  log_event("Read menu items count=%d", menu_items_count);
+  log_event("Read menu items count=%d", menu_items.count);
 
   log_event("SDL starting");
   initSDL();
