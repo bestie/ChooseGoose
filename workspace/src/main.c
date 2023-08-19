@@ -140,8 +140,8 @@ void quit(int exit_code) {
 SDL_Surface create_text_surface(char *text, Color color) {
   SDL_Color text_color = {color.r, color.g, color.b};
 
-  SDL_Surface *text_surface = TTF_RenderText_Solid(font, text, text_color);
-  return *SDL_DisplayFormat(text_surface);
+  SDL_Surface *text_surface = TTF_RenderText_Blended(font, text, text_color);
+  return *text_surface;
 }
 
 SDL_Surface create_menu_item(char *text, int selected) {
@@ -307,6 +307,7 @@ void render() {
 
     SDL_Surface menu_item = create_menu_item(text, selected_state);
     SDL_BlitSurface(&menu_item, NULL, screen, &dest);
+    SDL_FreeSurface(&menu_item);
   }
   log_event("Rendered %d items from %d-%d", visible_menu_item_count,
             visible_menu_start, visible_menu_start + visible_menu_item_count);
