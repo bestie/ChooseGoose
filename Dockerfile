@@ -10,7 +10,15 @@ RUN apt-get update \
     && apt-get -y autoremove \
     && apt-get -y clean
 
+RUN apt-get install -y git vim
+
 RUN mkdir -p /root/workspace
+RUN mkdir -p /root/build
+WORKDIR /root/build
+COPY build/build-libyaml .
+RUN ./build-libyaml
+
+
 WORKDIR /root/workspace
 COPY workspace/docker_env.sh .
 RUN cat docker_env.sh >> /root/.bashrc
