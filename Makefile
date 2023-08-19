@@ -1,8 +1,9 @@
-PROJECT_NAME=RG35XX_SimpleMenu
-IMAGE_TAG=rg35xx_simplemenu:latest
+PROJECT_NAME=ChooseGoose
+PROJECT_SHORT=choose_goose
+IMAGE_TAG=rg35xx_choose_goose:latest
 WORKSPACE_DIR := $(shell pwd)/workspace
 BIN_DIR=$(WORKSPACE_DIR)/bin
-DESTINATION_DIR=RG/SimpleMenu/bin
+DESTINATION_DIR=RG/$(PROJECT_NAME)/bin
 
 .PHONY: cross_compile
 cross_compile: docker_build
@@ -11,11 +12,12 @@ cross_compile: docker_build
 	cp $(BIN_DIR)/* $(DESTINATION_DIR)
 
 test:
-	cd workspace && make -f Makefile.local && ls ../example/roms | binx64/simple_menu
+	cd workspace && make -f Makefile.local && ls ../example/roms | binx64/$(PROJECT_SHORT)
 
 .PHONY: push
 push: xcomp
-	cp ./workspace/bin/simple_menu RG/SimpleMenu/
+	cp ./workspace/bin/$(PROJECT_SHORT) RG/${PROJECT_NAME}
+	cp $(WORKSPACE_DIR)/assets $(DESTINATION_DIR)/ASSETS
 	adb push RG/* /mnt/mmc/Roms/APPS
 
 .PHONY: clean

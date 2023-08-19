@@ -1,0 +1,14 @@
+title:
+font_filepath: "assets/font.ttf"
+background_image_filepath: "assets/bg_no_sky.png"
+font_size: 18
+top_padding: 30
+bottom_padding: 30
+left_padding: 20
+right_padding: 0
+start_at_nth: 15
+logging_enabled: true
+prefix_with_number: true
+background_color: "#00FFFF"  # White
+text_color: "#000000"        # Black
+text_selected_color: "#FF0000"        # Red
