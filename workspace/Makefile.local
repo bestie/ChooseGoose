@@ -11,7 +11,7 @@ endif
 CC = gcc
 INCLUDES = -Iinclude
 
-TARGET = simple_menu
+TARGET = choose_goose
 SRCDIR = src
 OBJDIR = objx64
 BINDIR = binx64

@@ -2,8 +2,8 @@
 .build
 workspace/obj
 workspace/bin
-workspace/obj_native
-workspace/bin_native
+workspace/objx64
+workspace/binx64
 workspace/event_log.txt
-RG/SimpleMenu/simple_menu
-RG/SimpleMenu/bin
+RG/ChooseGoose/choose_goose
+RG/ChooseGoose/bin

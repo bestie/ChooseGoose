@@ -12,7 +12,7 @@ CFLAGS = -Wall
 INCLUDES = -I$(PREFIX)/include
 LDFLAGS = -L$(PREFIX)/lib -lSDL -lSDL_ttf -lSDL_image -lyaml
 
-TARGET = simple_menu
+TARGET = choose_goose
 SRCDIR = src
 OBJDIR = obj
 BINDIR = bin
@@ -24,7 +24,7 @@ all: $(BINDIR)/$(TARGET)
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
 	mkdir -p $(@D)
-	# /opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-gcc obj/main.o -g -L/opt/miyoo/lib -lSDL -lSDL_ttf -o bin/simple_menu
+	# /opt/miyoo/bin/arm-miyoo-linux-uclibcgnueabi-gcc obj/main.o -g -L/opt/miyoo/lib -lSDL -lSDL_ttf -o bin/choose_goose
 	$(CC) $(LDFLAGS) $^ -o $@ $(CFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
