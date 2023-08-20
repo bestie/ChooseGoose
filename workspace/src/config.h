@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <stdio.h>
+
 typedef struct {
   int r, g, b;
 } Color;
@@ -27,6 +29,6 @@ typedef struct {
 
 void config_set_defaults(Config *config);
 int parse_config_yaml_file(Config *config, const char *filename);
-void print_config(const Config *config);
+void print_config(FILE *output, const Config *config);
 
 #endif

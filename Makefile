@@ -17,7 +17,7 @@ cross_compile: docker_build
 
 # Compile and run the app natively
 test:
-	cd workspace && make -f Makefile.local && ls ../example/roms | binx64/$(PROJECT_SHORT)
+	cd workspace && make -f Makefile.local && cat ../rom_list.txt | binx64/$(PROJECT_SHORT)
 
 .PHONY: push
 push: cross_compile
@@ -29,7 +29,8 @@ push: cross_compile
 
 .PHONY: clean
 clean:
-	rm -rf $(BIN_DIR) $(OBJ_DIR) $(DESTINATION_DIR)
+	cd workspace && make clean
+	cd workspace && make -f Makefile.local clean
 
 .PHONY: clean_rg
 clean_rg:

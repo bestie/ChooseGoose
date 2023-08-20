@@ -60,14 +60,17 @@ BunchOfLines read_lines_from_stdin(int max_line_length) {
 
   int i = 0;
   while (fgets(lines[i], max_line_length, stdin)) {
+    fprintf(stderr, "%d %s", i, lines[i]);
     terminate_at_new_line(lines[i]);
     i++;
     lines = realloc(lines, (i + 1) * sizeof(char *));
     lines[i] = malloc(max_line_length * sizeof(char));
   }
+
   lines[i] = NULL;
 
-  BunchOfLines bunch = {i - 1, max_line_length, lines};
+  BunchOfLines bunch = {i, max_line_length, lines};
+
   return bunch;
 }
 
@@ -102,7 +105,10 @@ void log_event(const char *format, ...) {
   pid_t processID = getpid();
 
   fprintf(output, "[%s][PID: %d] %s\n", time_buffer, processID, message);
-  fclose(output);
+
+  if (output != stderr) {
+    fclose(output);
+  }
 }
 
 void initSDL() {
@@ -141,7 +147,7 @@ void quit(int exit_code) {
 SDL_Surface create_text_surface(char *text, Color color) {
   SDL_Color text_color = {color.r, color.g, color.b};
 
-  SDL_Surface *text_surface = TTF_RenderText_Blended(font, text, text_color);
+  SDL_Surface *text_surface = TTF_RenderText_Solid(font, text, text_color);
   return *text_surface;
 }
 
@@ -163,7 +169,7 @@ void menu_move_selection(int increment) {
   if (selected_index < 0) {
     selected_index = menu_items.count - 1;
   }
-  log_event("Moved to from %d to %d", from, selected_index);
+  // log_event("Moved to from %d to %d", from, selected_index);
 }
 
 void menu_confirm() {
@@ -174,7 +180,7 @@ void menu_confirm() {
 }
 
 void handle_dpad(SDL_JoyHatEvent event) {
-  log_event("D-Pad movement: hat %d, value: %d", event.hat, event.value);
+  // log_event("D-Pad movement: hat %d, value: %d", event.hat, event.value);
   switch (event.value) {
   case SDL_HAT_UP:
     menu_move_selection(-1);
@@ -260,34 +266,72 @@ void render() {
   int menu_item_height = font_pixel_height + MENU_ITEM_PADDING;
   int menu_height =
       SCREEN_HEIGHT - (config.top_padding + config.bottom_padding);
+  int max_items = menu_height / menu_item_height;
+
+  log_event("menu height = %d, max_items=%d", menu_height, max_items);
+
   int menu_y_offset = config.top_padding;
 
-  if (strlen(config.title)) {
-    int header_padding = (config.top_padding / 2) + MENU_ITEM_PADDING;
+  // if (strlen(config.title)) {
+  //   int header_padding = (config.top_padding / 2) + MENU_ITEM_PADDING;
 
-    SDL_Surface title_surface =
-        create_text_surface(config.title, config.text_color);
-    SDL_Rect dest = {config.left_padding, header_padding, SCREEN_WIDTH,
-                     menu_item_height};
-    SDL_BlitSurface(&title_surface, NULL, screen, &dest);
+  //   SDL_Surface title_surface =
+  //       create_text_surface(config.title, config.text_color);
+  //   SDL_Rect dest = {config.left_padding, header_padding, SCREEN_WIDTH,
+  //                    menu_item_height};
+  //   SDL_BlitSurface(&title_surface, NULL, screen, &dest);
 
-    log_event("headear padding = %d", header_padding);
-    log_event("title surface height = %d", title_surface.h);
-    menu_height -= title_surface.h;
-    menu_y_offset += title_surface.h;
-  }
+  //   menu_height -= title_surface.h;
+  //   menu_y_offset += title_surface.h;
+  // }
 
-  int visible_menu_item_count = menu_height / menu_item_height;
-  int visible_menu_start = selected_index - (visible_menu_item_count / 2);
-  if (visible_menu_start < 0)
+  int default_items_above = max_items / 2;
+  int default_items_below = max_items - default_items_above - 1;
+  log_event("---------------------------- max_items=%d, default_above=%d, "
+            "default_below=%d",
+            max_items, default_items_above, default_items_below);
+
+  int visible_menu_start = selected_index - default_items_above;
+  int visible_menu_end = selected_index + default_items_below;
+
+  // Not enough items above cursor, lock window to top of list
+  if (visible_menu_start < 0) {
+    log_event("Not enough sticking to top");
     visible_menu_start = 0;
-  if (visible_menu_start + visible_menu_item_count > menu_items.count) {
-    visible_menu_start = menu_items.count - visible_menu_item_count;
+    visible_menu_end = visible_menu_start + max_items - 1;
   }
 
-  int menu_index, selected_state = 0;
+  // Not enough items below cursor lock window to bottom of list
+  if (visible_menu_end > menu_items.count - 1) {
+    log_event("Not enough sticking to bottom");
+    visible_menu_end = menu_items.count - 1;
+    visible_menu_start = visible_menu_end - max_items + 1;
+  }
 
-  for (int i = 0; i < visible_menu_item_count; i++) {
+  // Final constraint check that neither are out of bounds
+  if (visible_menu_start < 0 || visible_menu_start > (menu_items.count - 1)) {
+    log_event("Oooops - menu item start index is less than 0, %d",
+              visible_menu_start);
+    visible_menu_start = 0;
+  }
+  if (visible_menu_end > menu_items.count - 1 || visible_menu_end < 0) {
+    log_event("Aww geeez - menu item end index is more than ",
+              visible_menu_end);
+    visible_menu_end = menu_items.count - 1;
+  }
+
+  log_event("~~~~~ starting menu start=%d, end=%d, diff=%d", visible_menu_start,
+            visible_menu_end, (visible_menu_end - visible_menu_start));
+
+  int menu_index = 0;
+
+  // log_event("~~~~~ starting menu visible_menu_item_count=%d,
+  // menu_y_offset=%d",
+  //           visible_menu_item_count, menu_y_offset);
+
+  int counter = 0;
+  for (int i = 0; i < max_items; i++) {
+    counter++;
     menu_index = visible_menu_start + i;
     if (menu_items.lines[menu_index] == NULL)
       break;
@@ -297,24 +341,25 @@ void render() {
       sprintf(text, "%3d. %s", menu_index + 1, menu_items.lines[menu_index]);
     } else {
       sprintf(text, "%s", menu_items.lines[menu_index]);
-
-      selected_state = selected_index == menu_index;
-
-      SDL_Rect dest;
-      dest.x = config.left_padding;
-      dest.y = menu_y_offset + i * menu_item_height;
-      dest.w = SCREEN_WIDTH;
-      dest.h = 0;
-
-      SDL_Surface menu_item = create_menu_item(text, selected_state);
-      SDL_BlitSurface(&menu_item, NULL, screen, &dest);
-      // SDL_FreeSurface(&menu_item);
     }
-    log_event("Rendered %d items from %d-%d", visible_menu_item_count,
-              visible_menu_start, visible_menu_start + visible_menu_item_count);
 
-    SDL_Flip(screen);
+    int selected_state = selected_index == menu_index;
+
+    SDL_Rect dest;
+    dest.x = config.left_padding;
+    dest.y = menu_y_offset + i * menu_item_height;
+    dest.w = SCREEN_WIDTH;
+    dest.h = 0;
+
+    SDL_Surface menu_item = create_menu_item(text, selected_state);
+    SDL_BlitSurface(&menu_item, NULL, screen, &dest);
+    // SDL_FreeSurface(&menu_item);
   }
+  log_event("did %d loops", counter);
+  // log_event("Rendered %d items from %d-%d", visible_menu_item_count,
+  // visible_menu_start, visible_menu_start + visible_menu_item_count);
+
+  SDL_Flip(screen);
 }
 
 void first_render() {
@@ -330,13 +375,15 @@ void first_render() {
 int main(int argc, char **argv) {
   log_event("Starting up");
 
-  config_set_defaults(&config);
-  // int result = parse_config_yaml_file(&config, "./assets/default.yaml");
-  // if (!result) {
-  //   log_event("Failed to parse config");
-  //   exit(1);
-  // }
-  print_config(&config);
+  // config_set_defaults(&config);
+  int result = parse_config_yaml_file(&config, "assets/default.yaml");
+  if (!result) {
+    log_event("Failed to parse config");
+    exit(1);
+  }
+
+  // print_config(log_target(), &config);
+  // fclose(log_target());
 
   log_event("Setting starting selection to %d", config.start_at_nth - 1);
   selected_index = config.start_at_nth - 1;
@@ -344,6 +391,8 @@ int main(int argc, char **argv) {
   log_event("Reading menu items");
   menu_items = read_lines_from_stdin(0);
   log_event("Read menu items count=%d", menu_items.count);
+  log_event("  first=%s", menu_items.lines[0]);
+  log_event("   last=%s", menu_items.lines[menu_items.count - 1]);
 
   log_event("SDL starting");
   initSDL();
