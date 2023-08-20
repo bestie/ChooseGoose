@@ -297,23 +297,24 @@ void render() {
       sprintf(text, "%3d. %s", menu_index + 1, menu_items.lines[menu_index]);
     } else {
       sprintf(text, "%s", menu_items.lines[menu_index]);
+
+      selected_state = selected_index == menu_index;
+
+      SDL_Rect dest;
+      dest.x = config.left_padding;
+      dest.y = menu_y_offset + i * menu_item_height;
+      dest.w = SCREEN_WIDTH;
+      dest.h = 0;
+
+      SDL_Surface menu_item = create_menu_item(text, selected_state);
+      SDL_BlitSurface(&menu_item, NULL, screen, &dest);
+      // SDL_FreeSurface(&menu_item);
     }
-    selected_state = selected_index == menu_index;
+    log_event("Rendered %d items from %d-%d", visible_menu_item_count,
+              visible_menu_start, visible_menu_start + visible_menu_item_count);
 
-    SDL_Rect dest;
-    dest.x = config.left_padding;
-    dest.y = menu_y_offset + i * menu_item_height;
-    dest.w = SCREEN_WIDTH;
-    dest.h = 0;
-
-    SDL_Surface menu_item = create_menu_item(text, selected_state);
-    SDL_BlitSurface(&menu_item, NULL, screen, &dest);
-    // SDL_FreeSurface(&menu_item);
+    SDL_Flip(screen);
   }
-  log_event("Rendered %d items from %d-%d", visible_menu_item_count,
-            visible_menu_start, visible_menu_start + visible_menu_item_count);
-
-  SDL_Flip(screen);
 }
 
 void first_render() {
@@ -328,12 +329,13 @@ void first_render() {
 
 int main(int argc, char **argv) {
   log_event("Starting up");
-  // config_set_defaults(&config);
-  int result = parse_config_yaml_file(&config, "assets/default.yaml");
-  if (!result) {
-    log_event("Failed to parse config");
-    exit(1);
-  }
+
+  config_set_defaults(&config);
+  // int result = parse_config_yaml_file(&config, "./assets/default.yaml");
+  // if (!result) {
+  //   log_event("Failed to parse config");
+  //   exit(1);
+  // }
   print_config(&config);
 
   log_event("Setting starting selection to %d", config.start_at_nth - 1);

@@ -10,7 +10,8 @@ AS = $(CROSS_COMPILE)as
 
 CFLAGS = -Wall
 INCLUDES = -I$(PREFIX)/include
-LDFLAGS = -L$(PREFIX)/lib -lSDL -lSDL_ttf -lSDL_image -lyaml
+LDFLAGS = -L$(PREFIX)/lib -lSDL -lSDL_ttf -lSDL_image
+# -lyaml
 
 TARGET = choose_goose
 SRCDIR = src
