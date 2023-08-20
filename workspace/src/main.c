@@ -102,6 +102,7 @@ void log_event(const char *format, ...) {
   pid_t processID = getpid();
 
   fprintf(output, "[%s][PID: %d] %s\n", time_buffer, processID, message);
+  fclose(output);
 }
 
 void initSDL() {
