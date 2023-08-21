@@ -55,7 +55,7 @@ void terminate_at_file_extension(char *filename) {
 }
 
 FILE *log_target() {
-  if (0 && isatty(fileno(stderr))) {
+  if (isatty(fileno(stderr))) {
     return stderr;
   } else {
     return fopen("event_log.txt", "a");
@@ -85,7 +85,10 @@ void log_event(const char *format, ...) {
   pid_t processID = getpid();
 
   fprintf(output, "[%s][PID: %d] %s\n", time_buffer, processID, message);
-  fclose(output);
+
+  if (!isatty(fileno(log_target()))) {
+    fclose(output);
+  }
 }
 
 BunchOfLines read_lines_from_stdin(int max_line_length) {
@@ -98,9 +101,6 @@ BunchOfLines read_lines_from_stdin(int max_line_length) {
   if (!lines) {
     fprintf(log_target(), "mallioc failed \n");
   }
-
-  // FILE *logfile = log_target();
-  // FILE *logfile = stderr;
 
   int lines_i = 0;
   lines[lines_i] = (char *)(lines + (max_line_length * (lines_i + 1)));
@@ -145,16 +145,23 @@ void initSDL() {
 }
 
 void cleanup() {
+  SDL_FreeSurface(background_image);
+  SDL_FreeSurface(screen);
   if (joystick) {
     SDL_JoystickClose(joystick);
   }
-  TTF_CloseFont(font);
+  if (font) {
+    TTF_CloseFont(font);
+  }
   TTF_Quit();
+  IMG_Quit();
   SDL_Quit();
 }
 
 void quit(int exit_code) {
+  log_event("Shutting down gracefully.");
   cleanup();
+  log_event("Clean up successful.");
   exit(exit_code);
 }
 
@@ -309,6 +316,7 @@ void render() {
     SDL_Rect dest = {config.left_padding, header_padding, SCREEN_WIDTH,
                      menu_item_height};
     SDL_BlitSurface(&title_surface, NULL, screen, &dest);
+    SDL_FreeSurface(&title_surface);
 
     menu_height -= title_surface.h;
     menu_y_offset += title_surface.h;
@@ -316,41 +324,29 @@ void render() {
 
   int default_items_above = menu_max_items / 2;
   int default_items_below = menu_max_items - default_items_above - 1;
-  log_event("---------------------------- menu_max_items=%d, default_above=%d, "
-            "default_below=%d",
-            menu_max_items, default_items_above, default_items_below);
 
   int visible_menu_start = selected_index - default_items_above;
   int visible_menu_end = selected_index + default_items_below;
 
   // Not enough items above cursor, lock window to top of list
   if (visible_menu_start < 0) {
-    log_event("Not enough sticking to top");
     visible_menu_start = 0;
     visible_menu_end = visible_menu_start + menu_max_items - 1;
   }
 
   // Not enough items below cursor lock window to bottom of list
   if (visible_menu_end > menu_items.count - 1) {
-    log_event("Not enough sticking to bottom");
     visible_menu_end = menu_items.count - 1;
     visible_menu_start = visible_menu_end - menu_max_items + 1;
   }
 
   // Final constraint check that neither are out of bounds
   if (visible_menu_start < 0 || visible_menu_start > (menu_items.count - 1)) {
-    log_event("Oooops - menu item start index is less than 0, %d",
-              visible_menu_start);
     visible_menu_start = 0;
   }
   if (visible_menu_end > menu_items.count - 1 || visible_menu_end < 0) {
-    log_event("Aww geeez - menu item end index is more than ",
-              visible_menu_end);
     visible_menu_end = menu_items.count - 1;
   }
-
-  log_event("~~~~~ starting menu start=%d, end=%d, diff=%d", visible_menu_start,
-            visible_menu_end, (visible_menu_end - visible_menu_start));
 
   int menu_index = 0;
 
@@ -396,7 +392,7 @@ void first_render() {
   menu_height = SCREEN_HEIGHT - (config.top_padding + config.bottom_padding);
   menu_max_items = menu_height / menu_item_height;
 
-  log_event("menu height = %d, menu_max_itemiis=%d", menu_height,
+  log_event("menu height = %d, menu_max_itemis=%d", menu_height,
             menu_max_items);
   render();
 }
@@ -408,18 +404,15 @@ int main(int argc, char **argv) {
   int result = parse_config_yaml_file(&config, "assets/default.yaml");
   if (!result) {
     log_event("Failed to parse config");
-    exit(1);
+    quit(1);
   }
-
-  // print_config(log_target(), &config);
-  // fclose(log_target());
 
   log_event("Setting starting selection to %d", config.start_at_nth - 1);
   selected_index = config.start_at_nth - 1;
 
   log_event("Reading menu items");
   menu_items = read_lines_from_stdin(0);
-  log_event("Read menu items count=%d", menu_items.count);
+  log_event("Menu items count=%d", menu_items.count);
   log_event("  first=%s", menu_items.lines[0]);
   log_event("   last=%s", menu_items.lines[menu_items.count - 1]);
 
