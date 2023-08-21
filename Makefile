@@ -5,27 +5,48 @@ PROJECT_SHORT=choose_goose
 IMAGE_TAG=rg35xx_choose_goose:latest
 WORKSPACE_DIR := $(shell pwd)/workspace
 BIN_DIR=$(WORKSPACE_DIR)/bin
+EXECUTABLE=$(BIN_DIR)/$(PROJECT_SHORT)
 DESTINATION_DIR=RG/$(PROJECT_NAME)
 RG_APPS=/mnt/mmc/Roms/APPS
 RG_DESTINATION=$(RG_APPS)/$(PROJECT_NAME)
 
-.PHONY: cross_compile
-cross_compile: docker_build
+NATIVE_EXECUTABLE=$(WORKSPACE_DIR)/binx64/$(PROJECT_SHORT)
+
+$(EXECUTABLE): $(WORKSPACE_DIR)/src/*
 	docker run --rm --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash --login -c make
 	mkdir -p $(DESTINATION_DIR)
 	cp $(BIN_DIR)/* $(DESTINATION_DIR)
+	@echo "✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅"
 
-# Compile and run the app natively
-test:
-	cd workspace && make -f Makefile.local && cat ../rom_list.txt | binx64/$(PROJECT_SHORT)
+.PHONY: rg_executable
+rg_executable: $(EXECUTABLE)
+
+.PHONY: deploy
+deploy: clean clean_rg $(EXECUTABLE) push
+	@echo "🚢"
 
 .PHONY: push
-push: cross_compile
-	cp ./workspace/bin/$(PROJECT_SHORT) RG/${PROJECT_NAME}
+push:
+	cp $(EXECUTABLE) RG/${PROJECT_NAME}
 	cp -r $(WORKSPACE_DIR)/assets $(DESTINATION_DIR)
 	cp -r libyaml-armv7/lib $(DESTINATION_DIR)
 	adb push --sync RG/* $(RG_APPS)
 	adb shell ls -l $(RG_DESTINATION)
+
+# Tail the app's log on the device
+.PHONY: tail_rg
+tail_rg:
+	adb shell touch $(RG_DESTINATION)/event_log.txt
+	echo " ~~~ Open the app 👉 🎮"
+	adb shell busybox tail -f $(RG_DESTINATION)/event_log.txt
+
+# Compile and run the app natively
+.PHONY: test
+test: $(NATIVE_EXECUTABLE)
+	cd workspace && ls ../example/roms | sort | binx64/$(PROJECT_SHORT)
+
+$(NATIVE_EXECUTABLE): $(WORKSPACE_DIR)/src/*
+	cd workspace && make -f Makefile.local clean all
 
 .PHONY: clean
 clean:
@@ -44,6 +65,6 @@ shell:
 docker_build:
 	docker build --tag $(IMAGE_TAG) .
 
-.PHONY: clean
+.PHONY: docker_clean
 docker_clean:
 	docker rmi $(IMAGE_TAG)
