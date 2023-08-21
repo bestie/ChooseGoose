@@ -2,10 +2,12 @@
 #include <SDL/SDL_image.h>
 #include <SDL/SDL_ttf.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 
+#include "SDL/SDL_keysym.h"
 #include "SDL/SDL_video.h"
 #include "config.h"
 
@@ -30,11 +32,18 @@ typedef struct {
   int count;
   int max_length;
   char **lines;
+  int last_index;
+  char *first;
+  char *last;
 } BunchOfLines;
 
 BunchOfLines menu_items;
 Uint32 background_color;
 Config config;
+
+int menu_item_height;
+int menu_height;
+int menu_max_items;
 int font_pixel_height;
 int selected_index = 0;
 
@@ -45,37 +54,8 @@ void terminate_at_file_extension(char *filename) {
   }
 }
 
-void terminate_at_new_line(char *string) {
-  char *newline = strchr(string, '\n');
-  if (newline) {
-    *newline = '\0';
-  }
-}
-
-BunchOfLines read_lines_from_stdin(int max_line_length) {
-  char **lines = malloc(sizeof(char *));
-
-  max_line_length = max_line_length ? max_line_length : 255;
-  lines[0] = malloc(max_line_length * sizeof(char));
-
-  int i = 0;
-  while (fgets(lines[i], max_line_length, stdin)) {
-    fprintf(stderr, "%d %s", i, lines[i]);
-    terminate_at_new_line(lines[i]);
-    i++;
-    lines = realloc(lines, (i + 1) * sizeof(char *));
-    lines[i] = malloc(max_line_length * sizeof(char));
-  }
-
-  lines[i] = NULL;
-
-  BunchOfLines bunch = {i, max_line_length, lines};
-
-  return bunch;
-}
-
 FILE *log_target() {
-  if (isatty(fileno(stderr))) {
+  if (0 && isatty(fileno(stderr))) {
     return stderr;
   } else {
     return fopen("event_log.txt", "a");
@@ -106,6 +86,43 @@ void log_event(const char *format, ...) {
 
   fprintf(output, "[%s][PID: %d] %s\n", time_buffer, processID, message);
   fclose(output);
+}
+
+BunchOfLines read_lines_from_stdin(int max_line_length) {
+  fprintf(log_target(), "reading stdin ...\n");
+  int max_lines = 4096;
+  max_line_length = max_line_length ? max_line_length : 256;
+
+  char **lines =
+      malloc(max_lines * sizeof(char *) + max_lines * max_line_length);
+  if (!lines) {
+    fprintf(log_target(), "mallioc failed \n");
+  }
+
+  // FILE *logfile = log_target();
+  // FILE *logfile = stderr;
+
+  int lines_i = 0;
+  lines[lines_i] = (char *)(lines + (max_line_length * (lines_i + 1)));
+
+  while (fgets(lines[lines_i], max_line_length, stdin)) {
+    int buffbaby_size = strlen(lines[lines_i]);
+    fprintf(log_target(), "Read stdin reads=%d bytes=%d: %s\n", lines_i,
+            buffbaby_size, lines[lines_i]);
+    lines[lines_i][buffbaby_size - 1] = '\0';
+    lines_i++;
+    lines[lines_i] = (char *)(lines + (max_line_length * (lines_i + 1)));
+  }
+  fprintf(log_target(), "out of loop %d", lines_i);
+
+  lines[lines_i] = NULL;
+
+  BunchOfLines bunch = {
+      lines_i,       max_line_length, lines,
+      (lines_i - 1), lines[0],        lines[lines_i - 1],
+  };
+
+  return bunch;
 }
 
 void initSDL() {
@@ -144,7 +161,7 @@ void quit(int exit_code) {
 SDL_Surface create_text_surface(char *text, Color color) {
   SDL_Color text_color = {color.r, color.g, color.b};
 
-  SDL_Surface *text_surface = TTF_RenderText_Solid(font, text, text_color);
+  SDL_Surface *text_surface = TTF_RenderText_Blended(font, text, text_color);
   return *text_surface;
 }
 
@@ -159,13 +176,22 @@ SDL_Surface create_menu_item(char *text, int selected) {
   return create_text_surface(text, color);
 }
 
-void menu_move_selection(int increment) {
-  int from;
-  from = selected_index;
-  selected_index = (selected_index + increment) % menu_items.count;
+void menu_move_selection(int increment, int cycle) {
+  int from = selected_index;
+  selected_index = selected_index + increment;
+  if (cycle) {
+    selected_index = selected_index % menu_items.count;
+    if (selected_index < 0) {
+      selected_index = menu_items.count - 1;
+    }
+  }
+
   if (selected_index < 0) {
+    selected_index = 0;
+  } else if (selected_index > menu_items.count) {
     selected_index = menu_items.count - 1;
   }
+
   // log_event("Moved to from %d to %d", from, selected_index);
 }
 
@@ -180,10 +206,16 @@ void handle_dpad(SDL_JoyHatEvent event) {
   // log_event("D-Pad movement: hat %d, value: %d", event.hat, event.value);
   switch (event.value) {
   case SDL_HAT_UP:
-    menu_move_selection(-1);
+    menu_move_selection(-1, 1);
     break;
   case SDL_HAT_DOWN:
-    menu_move_selection(1);
+    menu_move_selection(1, 1);
+    break;
+  case SDL_HAT_LEFT:
+    menu_move_selection(-menu_max_items, 0);
+    break;
+  case SDL_HAT_RIGHT:
+    menu_move_selection(menu_max_items, 0);
     break;
   case SDLK_RETURN:
     menu_confirm();
@@ -220,10 +252,16 @@ void handle_key_press(SDL_Event event) {
   log_event("Keyboard keypress: value: %d", event.key.keysym.sym);
   switch (event.key.keysym.sym) {
   case SDLK_UP:
-    menu_move_selection(-1);
+    menu_move_selection(-1, 1);
     break;
   case SDLK_DOWN:
-    menu_move_selection(1);
+    menu_move_selection(1, 1);
+    break;
+  case SDLK_LEFT:
+    menu_move_selection(-menu_max_items, 0);
+    break;
+  case SDLK_RIGHT:
+    menu_move_selection(menu_max_items, 0);
     break;
   case SDLK_RETURN:
     menu_confirm();
@@ -260,33 +298,27 @@ void render() {
   if (background_image) {
     SDL_BlitSurface(background_image, NULL, screen, NULL);
   }
-  int menu_item_height = font_pixel_height + MENU_ITEM_PADDING;
-  int menu_height =
-      SCREEN_HEIGHT - (config.top_padding + config.bottom_padding);
-  int max_items = menu_height / menu_item_height;
-
-  log_event("menu height = %d, max_items=%d", menu_height, max_items);
 
   int menu_y_offset = config.top_padding;
 
-  // if (strlen(config.title)) {
-  //   int header_padding = (config.top_padding / 2) + MENU_ITEM_PADDING;
+  if (strlen(config.title)) {
+    int header_padding = (config.top_padding / 2) + MENU_ITEM_PADDING;
 
-  //   SDL_Surface title_surface =
-  //       create_text_surface(config.title, config.text_color);
-  //   SDL_Rect dest = {config.left_padding, header_padding, SCREEN_WIDTH,
-  //                    menu_item_height};
-  //   SDL_BlitSurface(&title_surface, NULL, screen, &dest);
+    SDL_Surface title_surface =
+        create_text_surface(config.title, config.text_color);
+    SDL_Rect dest = {config.left_padding, header_padding, SCREEN_WIDTH,
+                     menu_item_height};
+    SDL_BlitSurface(&title_surface, NULL, screen, &dest);
 
-  //   menu_height -= title_surface.h;
-  //   menu_y_offset += title_surface.h;
-  // }
+    menu_height -= title_surface.h;
+    menu_y_offset += title_surface.h;
+  }
 
-  int default_items_above = max_items / 2;
-  int default_items_below = max_items - default_items_above - 1;
-  log_event("---------------------------- max_items=%d, default_above=%d, "
+  int default_items_above = menu_max_items / 2;
+  int default_items_below = menu_max_items - default_items_above - 1;
+  log_event("---------------------------- menu_max_items=%d, default_above=%d, "
             "default_below=%d",
-            max_items, default_items_above, default_items_below);
+            menu_max_items, default_items_above, default_items_below);
 
   int visible_menu_start = selected_index - default_items_above;
   int visible_menu_end = selected_index + default_items_below;
@@ -295,14 +327,14 @@ void render() {
   if (visible_menu_start < 0) {
     log_event("Not enough sticking to top");
     visible_menu_start = 0;
-    visible_menu_end = visible_menu_start + max_items - 1;
+    visible_menu_end = visible_menu_start + menu_max_items - 1;
   }
 
   // Not enough items below cursor lock window to bottom of list
   if (visible_menu_end > menu_items.count - 1) {
     log_event("Not enough sticking to bottom");
     visible_menu_end = menu_items.count - 1;
-    visible_menu_start = visible_menu_end - max_items + 1;
+    visible_menu_start = visible_menu_end - menu_max_items + 1;
   }
 
   // Final constraint check that neither are out of bounds
@@ -322,12 +354,8 @@ void render() {
 
   int menu_index = 0;
 
-  // log_event("~~~~~ starting menu visible_menu_item_count=%d,
-  // menu_y_offset=%d",
-  //           visible_menu_item_count, menu_y_offset);
-
   int counter = 0;
-  for (int i = 0; i < max_items; i++) {
+  for (int i = 0; i < menu_max_items; i++) {
     counter++;
     menu_index = visible_menu_start + i;
     if (menu_items.lines[menu_index] == NULL)
@@ -350,11 +378,8 @@ void render() {
 
     SDL_Surface menu_item = create_menu_item(text, selected_state);
     SDL_BlitSurface(&menu_item, NULL, screen, &dest);
-    // SDL_FreeSurface(&menu_item);
+    SDL_FreeSurface(&menu_item);
   }
-  log_event("did %d loops", counter);
-  // log_event("Rendered %d items from %d-%d", visible_menu_item_count,
-  // visible_menu_start, visible_menu_start + visible_menu_item_count);
 
   SDL_Flip(screen);
 }
@@ -366,6 +391,13 @@ void first_render() {
   background_color =
       SDL_MapRGB(screen->format, config.background_color.r,
                  config.background_color.g, config.background_color.b);
+
+  menu_item_height = font_pixel_height + MENU_ITEM_PADDING;
+  menu_height = SCREEN_HEIGHT - (config.top_padding + config.bottom_padding);
+  menu_max_items = menu_height / menu_item_height;
+
+  log_event("menu height = %d, menu_max_itemiis=%d", menu_height,
+            menu_max_items);
   render();
 }
 

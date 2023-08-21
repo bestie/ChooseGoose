@@ -1,14 +1,14 @@
-title:
+title: " ~~~ Choose Goose ~~~ "
 font_filepath: "assets/font.ttf"
 background_image_filepath: "assets/bg_no_sky.png"
-font_size: 18
+font_size: 22
 top_padding: 30
 bottom_padding: 30
 left_padding: 20
 right_padding: 0
-start_at_nth: 3
+start_at_nth: 0
 logging_enabled: true
-prefix_with_number: true
+prefix_with_number: false
 background_color: "#00FFFF"
 text_color: "#000000"
 text_selected_color: "#FF0000"

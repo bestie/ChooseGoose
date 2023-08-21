@@ -107,7 +107,6 @@ int parse_config_yaml_file(Config *config, const char *filename) {
 
       if (strcmp(key, "title") == 0) {
         yaml_parser_parse(&parser, &event);
-        printf("title=%s", event.data.scalar.value);
         strncpy(config->title, (char *)event.data.scalar.value,
                 sizeof(config->title));
       } else if (strcmp(key, "font_filepath") == 0) {
