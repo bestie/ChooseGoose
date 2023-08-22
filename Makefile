@@ -62,8 +62,10 @@ shell:
 	docker run --interactive --tty --rm --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash
 
 .PHONY: docker_build
-docker_build:
-	docker build --tag $(IMAGE_TAG) .
+docker_build: .docker_build
+
+.docker_build: Dockerfile
+	docker build --tag $(IMAGE_TAG) . && touch .docker_build
 
 .PHONY: docker_clean
 docker_clean:
