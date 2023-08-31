@@ -400,7 +400,7 @@ void first_render() {
 int main(int argc, char **argv) {
   log_event("Starting up");
 
-  // config_set_defaults(&config);
+  config_set_defaults(&config);
   int result = parse_config_yaml_file(&config, "config.yaml");
   if (!result) {
     log_event("Failed to parse config");
