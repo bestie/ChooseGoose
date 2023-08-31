@@ -5,5 +5,5 @@ workspace/bin
 workspace/objx64
 workspace/binx64
 workspace/event_log.txt
-RG/ChooseGoose/choose_goose
-RG/ChooseGoose/bin
+RG/*
+

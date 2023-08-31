@@ -316,7 +316,6 @@ void render() {
     SDL_Rect dest = {config.left_padding, header_padding, SCREEN_WIDTH,
                      menu_item_height};
     SDL_BlitSurface(&title_surface, NULL, screen, &dest);
-    SDL_FreeSurface(&title_surface);
 
     menu_height -= title_surface.h;
     menu_y_offset += title_surface.h;
@@ -374,7 +373,8 @@ void render() {
 
     SDL_Surface menu_item = create_menu_item(text, selected_state);
     SDL_BlitSurface(&menu_item, NULL, screen, &dest);
-    SDL_FreeSurface(&menu_item);
+    // TODO: free this
+    // SDL_FreeSurface(&menu_item);
   }
 
   SDL_Flip(screen);
