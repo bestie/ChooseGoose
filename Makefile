@@ -28,8 +28,9 @@ deploy: clean clean_rg $(EXECUTABLE) push
 .PHONY: push
 push:
 	cp $(EXECUTABLE) RG/${PROJECT_NAME}
+	cp $(EXECUTABLE) RG/${PROJECT_NAME}
+	cp $(WORKSPACE_DIR)/config.yaml RG/${PROJECT_NAME}
 	mkdir -p $(DESTINATION_DIR)
-	cp $(WORKSPACE_DIR)/assets/default.yaml   $(DESTINATION_DIR)/assets
 	cp $(WORKSPACE_DIR)/assets/bg_no_sky.png  $(DESTINATION_DIR)/assets
 	cp $(WORKSPACE_DIR)/assets/font.ttf       $(DESTINATION_DIR)/assets
 	cp -r libyaml-armv7/lib $(DESTINATION_DIR)
