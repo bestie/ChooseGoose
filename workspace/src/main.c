@@ -46,6 +46,7 @@ int menu_height;
 int menu_max_items;
 int font_pixel_height;
 int selected_index = 0;
+int button_repeat_active = 0;
 
 void terminate_at_file_extension(char *filename) {
   char *dot = strrchr(filename, '.');
@@ -55,11 +56,11 @@ void terminate_at_file_extension(char *filename) {
 }
 
 FILE *log_target() {
-  if (isatty(fileno(stderr))) {
-    return stderr;
-  } else {
+  // if (isatty(fileno(stderr))) {
+  //   return stderr;
+  // } else {
     return fopen("event_log.txt", "a");
-  }
+  // }
 }
 
 void log_event(const char *format, ...) {
@@ -210,26 +211,42 @@ void menu_confirm() {
   quit(0);
 }
 
+void enable_repeat() {
+  button_repeat_active = 1;
+}
+
+void disable_repeat() {
+  button_repeat_active = 0;
+}
+
+void wait_for_next_repeat() {
+  if(button_repeat_active) {
+    usleep(100 * 1000);
+  }
+}
+
 void handle_dpad(SDL_JoyHatEvent event) {
   // log_event("D-Pad movement: hat %d, value: %d", event.hat, event.value);
   switch (event.value) {
   case SDL_HAT_UP:
     menu_move_selection(-1, 1);
+    enable_repeat();
     break;
   case SDL_HAT_DOWN:
     menu_move_selection(1, 1);
+    enable_repeat();
     break;
   case SDL_HAT_LEFT:
     menu_move_selection(-menu_max_items, 0);
+    enable_repeat();
     break;
   case SDL_HAT_RIGHT:
     menu_move_selection(menu_max_items, 0);
+    enable_repeat();
     break;
-  case SDLK_RETURN:
-    menu_confirm();
-    break;
-  case SDLK_ESCAPE:
-    quit(0);
+  case SDL_HAT_CENTERED:
+    log_event("dpad centered");
+    disable_repeat();
     break;
   default:
     break;
@@ -440,7 +457,8 @@ int main(int argc, char **argv) {
   first_render();
   while (1) {
     poll_result = SDL_PollEvent(&event);
-    if (poll_result) {
+    if (poll_result || button_repeat_active) {
+      wait_for_next_repeat();
       if (handleInput(event)) {
         log_event("User input event type=%d", event.type);
         render();
