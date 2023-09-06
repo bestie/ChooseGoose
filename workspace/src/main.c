@@ -142,6 +142,7 @@ void initSDL() {
                             SDL_SWSURFACE);
 
   SDL_WM_SetCaption(config.title, NULL);
+  SDL_EnableKeyRepeat(400, 50);
 }
 
 void cleanup() {
