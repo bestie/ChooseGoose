@@ -165,14 +165,14 @@ void quit(int exit_code) {
   exit(exit_code);
 }
 
-SDL_Surface create_text_surface(char *text, Color color) {
+SDL_Surface *create_text_surface(char *text, Color color) {
   SDL_Color text_color = {color.r, color.g, color.b};
 
   SDL_Surface *text_surface = TTF_RenderText_Blended(font, text, text_color);
-  return *text_surface;
+  return text_surface;
 }
 
-SDL_Surface create_menu_item(char *text, int selected) {
+SDL_Surface *create_menu_item(char *text, int selected) {
   Color color;
   if (selected) {
     color = config.text_selected_color;
@@ -311,14 +311,15 @@ void render() {
   if (strlen(config.title)) {
     int header_padding = (config.top_padding / 2) + MENU_ITEM_PADDING;
 
-    SDL_Surface title_surface =
+    SDL_Surface *title_surface =
         create_text_surface(config.title, config.text_color);
     SDL_Rect dest = {config.left_padding, header_padding, SCREEN_WIDTH,
                      menu_item_height};
-    SDL_BlitSurface(&title_surface, NULL, screen, &dest);
+    SDL_BlitSurface(title_surface, NULL, screen, &dest);
 
-    menu_height -= title_surface.h;
-    menu_y_offset += title_surface.h;
+    menu_height -= title_surface->h;
+    menu_y_offset += title_surface->h;
+    SDL_FreeSurface(title_surface);
   }
 
   int default_items_above = menu_max_items / 2;
@@ -371,10 +372,9 @@ void render() {
     dest.w = SCREEN_WIDTH;
     dest.h = 0;
 
-    SDL_Surface menu_item = create_menu_item(text, selected_state);
-    SDL_BlitSurface(&menu_item, NULL, screen, &dest);
-    // TODO: free this
-    // SDL_FreeSurface(&menu_item);
+    SDL_Surface *menu_item = create_menu_item(text, selected_state);
+    SDL_BlitSurface(menu_item, NULL, screen, &dest);
+    SDL_FreeSurface(menu_item);
   }
 
   SDL_Flip(screen);
