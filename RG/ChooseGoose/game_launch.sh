@@ -10,7 +10,6 @@ game_launch_script="$RETROARCH/command.sh"
 
 function cleanup {
   echo 0 > $VIBES
-  echo "exiting $?"
 }
 trap cleanup EXIT
 
@@ -43,9 +42,8 @@ do
   echo "ps: $ps_line"
   echo "main not running"
   sleep 0.5
-
 done
 
-main_pid=$(echo $ps_line | busybox awk '{print $1}' | busybox xargs kill -TERM)
+echo $ps_line | busybox awk '{print $1}' | busybox xargs kill -TERM
 
 echo 0 > $VIBES
