@@ -132,7 +132,7 @@ void initSDL() {
   log_event("SDL_SetVideoMode(SCREEN_WIDTH=%d, SCREEN_HEIGHT=%d, bpp=%d)",
             SCREEN_WIDTH, SCREEN_HEIGHT, BITS_PER_PIXEL);
   screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, BITS_PER_PIXEL,
-                            SDL_SWSURFACE);
+                            SDL_HWSURFACE | SDL_DOUBLEBUF);
 
   SDL_WM_SetCaption(config.title, NULL);
   SDL_EnableKeyRepeat(400, 50);
@@ -462,6 +462,7 @@ int main(int argc, char **argv) {
       }
     }
 
+    // No user input - do button repeat
     if(!poll_result && button_repeat_active) {
       time_since_last_event = SDL_GetTicks() - last_event_at;
       time_since_last_repeat = SDL_GetTicks() - last_repeat_at;
