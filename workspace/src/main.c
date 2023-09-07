@@ -57,17 +57,16 @@ void terminate_at_file_extension(char *filename) {
 }
 
 FILE *log_target() {
-  // if (isatty(fileno(stderr))) {
-  //   return stderr;
-  // } else {
-    return fopen("events.log", "a");
-  // }
+  static FILE *log_file;
+
+  if(!log_file) {
+    log_file = fopen("events.log", "w");
+  }
+
+  return log_file;
 }
 
 void log_event(const char *format, ...) {
-  if (!config.logging_enabled) {
-    return;
-  }
   FILE *output = log_target();
   char message[255];
 
@@ -87,35 +86,25 @@ void log_event(const char *format, ...) {
   pid_t processID = getpid();
 
   fprintf(output, "[%s][PID: %d] %s\n", time_buffer, processID, message);
-
-  if (!isatty(fileno(log_target()))) {
-    fclose(output);
-  }
+  fflush(output);
 }
 
 BunchOfLines read_lines_from_stdin(int max_line_length) {
-  fprintf(log_target(), "reading stdin ...\n");
   int max_lines = 4096;
   max_line_length = max_line_length ? max_line_length : 256;
 
   char **lines =
       malloc(max_lines * sizeof(char *) + max_lines * max_line_length);
-  if (!lines) {
-    fprintf(log_target(), "mallioc failed \n");
-  }
 
   int lines_i = 0;
   lines[lines_i] = (char *)(lines + (max_line_length * (lines_i + 1)));
 
   while (fgets(lines[lines_i], max_line_length, stdin)) {
     int buffbaby_size = strlen(lines[lines_i]);
-    fprintf(log_target(), "Read stdin reads=%d bytes=%d: %s\n", lines_i,
-            buffbaby_size, lines[lines_i]);
     lines[lines_i][buffbaby_size - 1] = '\0';
     lines_i++;
     lines[lines_i] = (char *)(lines + (max_line_length * (lines_i + 1)));
   }
-  fprintf(log_target(), "out of loop %d", lines_i);
 
   lines[lines_i] = NULL;
 
@@ -159,12 +148,12 @@ void cleanup() {
   TTF_Quit();
   IMG_Quit();
   SDL_Quit();
+  fclose(log_target());
 }
 
 void quit(int exit_code) {
   log_event("Shutting down gracefully.");
   cleanup();
-  log_event("Clean up successful.");
   exit(exit_code);
 }
 
@@ -425,6 +414,11 @@ int main(int argc, char **argv) {
 
   log_event("Reading menu items");
   menu_items = read_lines_from_stdin(0);
+  if(menu_items.count < 1) {
+    log_event("No menu items on stdin");
+    quit(1);
+  }
+
   log_event("Menu items count=%d", menu_items.count);
   log_event("  first=%s", menu_items.lines[0]);
   log_event("   last=%s", menu_items.lines[menu_items.count - 1]);
