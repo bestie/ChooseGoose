@@ -22,6 +22,8 @@
 #define BUTTON_SELECT 7
 #define BUTTON_START 8
 #define BUTTON_MENU 9
+#define BUTTON_REPEAT_DELAY_MS 250
+#define BUTTON_REPEAT_INTERVAL 150
 
 SDL_Surface *screen;
 SDL_Surface *background_image;
@@ -442,29 +444,29 @@ int main(int argc, char **argv) {
   log_event("SDL waiting for event");
   SDL_Event event;
   int poll_result;
-  Uint32 current_time = 0;
+
   Uint32 last_event_at = 0;
   Uint32 last_repeat_at = 0;
   Uint32 time_since_last_event = 0;
   Uint32 time_since_last_repeat = 0;
 
   first_render();
+
   while (1) {
-    current_time = SDL_GetTicks();
     poll_result = SDL_PollEvent(&event);
+
     if (poll_result) {
       last_event_at = SDL_GetTicks();
-      log_event("User input event type=%d ticks=%d", event.type, current_time);
       if (handleInput(event)) {
         render();
       }
     }
+
     if(!poll_result && button_repeat_active) {
       time_since_last_event = SDL_GetTicks() - last_event_at;
       time_since_last_repeat = SDL_GetTicks() - last_repeat_at;
 
-      if(time_since_last_event > 200 && time_since_last_repeat > 100) {
-        log_event("repeating input type=%d ticks=%d, sincelast=%d", event.type, current_time, time_since_last_event);
+      if(time_since_last_event > BUTTON_REPEAT_DELAY_MS && time_since_last_repeat > BUTTON_REPEAT_INTERVAL) {
         handleInput(event); //repeat the input event
         render();
       }
