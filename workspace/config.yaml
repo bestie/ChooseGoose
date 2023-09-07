@@ -6,7 +6,7 @@ top_padding: 30
 bottom_padding: 30
 left_padding: 20
 right_padding: 0
-start_at_nth: 0
+start_at_nth: 33
 logging_enabled: true
 prefix_with_number: false
 background_color: "#00FFFF"

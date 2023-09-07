@@ -59,7 +59,7 @@ FILE *log_target() {
   // if (isatty(fileno(stderr))) {
   //   return stderr;
   // } else {
-    return fopen("event_log.txt", "a");
+    return fopen("events.log", "a");
   // }
 }
 

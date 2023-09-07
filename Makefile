@@ -40,9 +40,10 @@ push:
 # Tail the app's log on the device
 .PHONY: tail_rg
 tail_rg:
-	adb shell touch $(RG_DESTINATION)/event_log.txt
+	adb shell touch $(RG_DESTINATION)/events.log
+	adb shell touch $(RG_DESTINATION)/goose.log
 	echo " ~~~ Open the app 👉 🎮"
-	adb shell busybox tail -f $(RG_DESTINATION)/event_log.txt
+	adb shell busybox tail -f $(RG_DESTINATION)/*.log
 
 # Compile and run the app natively
 .PHONY: test
