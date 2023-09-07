@@ -192,8 +192,6 @@ void menu_move_selection(int increment, int cycle) {
   } else if (selected_index > menu_items.count) {
     selected_index = menu_items.count - 1;
   }
-
-  // log_event("Moved to from %d to %d", from, selected_index);
 }
 
 void menu_confirm() {
