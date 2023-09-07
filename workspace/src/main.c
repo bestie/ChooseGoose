@@ -47,6 +47,7 @@ int menu_max_items;
 int font_pixel_height;
 int selected_index = 0;
 int button_repeat_active = 0;
+int button_repeat_first = 1;
 
 void terminate_at_file_extension(char *filename) {
   char *dot = strrchr(filename, '.');
@@ -213,16 +214,11 @@ void menu_confirm() {
 
 void enable_repeat() {
   button_repeat_active = 1;
+  button_repeat_first = 1;
 }
 
 void disable_repeat() {
   button_repeat_active = 0;
-}
-
-void wait_for_next_repeat() {
-  if(button_repeat_active) {
-    usleep(100 * 1000);
-  }
 }
 
 void handle_dpad(SDL_JoyHatEvent event) {
@@ -245,7 +241,6 @@ void handle_dpad(SDL_JoyHatEvent event) {
     enable_repeat();
     break;
   case SDL_HAT_CENTERED:
-    log_event("dpad centered");
     disable_repeat();
     break;
   default:
@@ -453,14 +448,30 @@ int main(int argc, char **argv) {
   log_event("SDL waiting for event");
   SDL_Event event;
   int poll_result;
+  Uint32 current_time = 0;
+  Uint32 last_event_at = 0;
+  Uint32 last_repeat_at = 0;
+  Uint32 time_since_last_event = 0;
+  Uint32 time_since_last_repeat = 0;
 
   first_render();
   while (1) {
+    current_time = SDL_GetTicks();
     poll_result = SDL_PollEvent(&event);
-    if (poll_result || button_repeat_active) {
-      wait_for_next_repeat();
+    if (poll_result) {
+      last_event_at = SDL_GetTicks();
+      log_event("User input event type=%d ticks=%d", event.type, current_time);
       if (handleInput(event)) {
-        log_event("User input event type=%d", event.type);
+        render();
+      }
+    }
+    if(!poll_result && button_repeat_active) {
+      time_since_last_event = SDL_GetTicks() - last_event_at;
+      time_since_last_repeat = SDL_GetTicks() - last_repeat_at;
+
+      if(time_since_last_event > 200 && time_since_last_repeat > 100) {
+        log_event("repeating input type=%d ticks=%d, sincelast=%d", event.type, current_time, time_since_last_event);
+        handleInput(event); //repeat the input event
         render();
       }
     }
