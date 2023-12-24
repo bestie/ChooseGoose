@@ -12,8 +12,8 @@ RG_DESTINATION=$(RG_APPS)/$(PROJECT_NAME)
 
 NATIVE_EXECUTABLE=$(WORKSPACE_DIR)/binx64/$(PROJECT_SHORT)
 
-$(EXECUTABLE): $(WORKSPACE_DIR)/src/*
-	docker run --rm --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash --login -c make
+$(EXECUTABLE): $(WORKSPACE_DIR)/src/* .docker_build
+	docker run --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash --login -c make
 	mkdir -p $(DESTINATION_DIR)
 	cp $(BIN_DIR)/* $(DESTINATION_DIR)
 	@echo "✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅"
@@ -28,7 +28,6 @@ deploy: clean clean_rg $(EXECUTABLE) push
 .PHONY: push
 push:
 	cp $(EXECUTABLE) RG/${PROJECT_NAME}
-	cp $(EXECUTABLE) RG/${PROJECT_NAME}
 	cp $(WORKSPACE_DIR)/config.yaml RG/${PROJECT_NAME}
 	mkdir -p $(DESTINATION_DIR)
 	mkdir -p $(DESTINATION_DIR)/lib
@@ -36,6 +35,7 @@ push:
 	cp $(WORKSPACE_DIR)/assets/bg_no_sky.png  $(DESTINATION_DIR)/assets
 	cp $(WORKSPACE_DIR)/assets/font.ttf       $(DESTINATION_DIR)/assets
 	cp -r libyaml-armv7/lib/libyaml-0.so.2 $(DESTINATION_DIR)/lib
+	adb push --sync RG/* $(RG_APPS)
 	adb push --sync RG/* $(RG_APPS)
 	adb shell ls -l $(RG_DESTINATION)
 
@@ -50,7 +50,7 @@ tail_rg:
 # Compile and run the app natively
 .PHONY: test
 test: $(NATIVE_EXECUTABLE)
-	cd workspace && ls ../example/roms | sort | binx64/$(PROJECT_SHORT)
+	cd workspace && cat ../RG/MD_rom_list.txt | sort | binx64/$(PROJECT_SHORT)
 
 $(NATIVE_EXECUTABLE): $(WORKSPACE_DIR)/src/*
 	cd workspace && make -f Makefile.local clean all
@@ -65,8 +65,8 @@ clean_rg:
 	adb shell rm -rf /mnt/mmc/Roms/APPS/ChooseGoos*
 
 .PHONY: shell
-shell:
-	docker run --interactive --tty --rm --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash
+shell: docker_build
+	docker run --interactive --tty --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash
 
 .PHONY: docker_build
 docker_build: .docker_build

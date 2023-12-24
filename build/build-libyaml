@@ -14,3 +14,21 @@ cd libyaml
 ./bootstrap
 ./configure --host=${HOST} --prefix=${PREFIX}
 make install
+
+# apt-get install -y wget
+# wget https://www.libsdl.org/release/SDL2-2.0.14.tar.gz && \
+#   tar xzf SDL2-2.0.14.tar.gz && \
+#   cd SDL2-2.0.14 && \
+#   ./configure --host=${HOST} --prefix=${PREFIX} \
+#       --enable-video-directfb=yes \
+#       --enable-video-opengl=no \
+#       && \
+#   make && \
+#   make install
+#
+# wget https://www.libsdl.org/projects/SDL_ttf/release/SDL2_ttf-2.0.15.tar.gz && \
+#   tar xzf SDL2_ttf-2.0.15.tar.gz && \
+#   cd SDL2_ttf-2.0.15 && \
+#   ./configure --host=${HOST} --prefix=${PREFIX} --disable-video-opengl \
+#   make && \
+#   make install

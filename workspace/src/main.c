@@ -192,6 +192,8 @@ void menu_move_selection(int increment, int cycle) {
   } else if (selected_index > menu_items.count) {
     selected_index = menu_items.count - 1;
   }
+
+  log_event("Moved to from %d to %d", from, selected_index);
 }
 
 void menu_confirm() {
@@ -247,10 +249,10 @@ void handle_joypad_button(SDL_JoyButtonEvent event) {
     menu_confirm();
     break;
   case BUTTON_B:
-    quit(0);
+    quit(1);
     break;
   case BUTTON_MENU:
-    quit(0);
+    quit(1);
     break;
   default:
     break;
