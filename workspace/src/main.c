@@ -14,6 +14,9 @@
 #include "SDL/SDL_video.h"
 #include "config.h"
 
+#define MAX_MENU_ITEMS 4096
+#define MAX_LINE_LENGTH 255
+
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
 #define BITS_PER_PIXEL 32
@@ -94,9 +97,9 @@ void log_event(const char *format, ...) {
   fflush(output);
 }
 
-BunchOfLines read_lines_from_stdin(int max_line_length) {
-    int max_lines = 4096;
-    max_line_length = max_line_length ? max_line_length : 256;
+BunchOfLines read_lines_from_stdin() {
+    int max_lines = MAX_MENU_ITEMS;
+    int max_line_length = MAX_LINE_LENGTH;
 
     size_t total_memory = max_lines * sizeof(char *) + max_lines * max_line_length;
 
@@ -435,7 +438,7 @@ int main(int argc, char **argv) {
   selected_index = config.start_at_nth - 1;
 
   log_event("Reading menu items");
-  menu_items = read_lines_from_stdin(0);
+  menu_items = read_lines_from_stdin();
 
   if(menu_items.count < 1) {
     log_event("No menu items on stdin");
