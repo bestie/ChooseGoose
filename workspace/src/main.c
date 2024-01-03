@@ -1,8 +1,11 @@
 #include <SDL/SDL_events.h>
 #include <SDL/SDL_image.h>
 #include <SDL/SDL_ttf.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <string.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
@@ -92,30 +95,34 @@ void log_event(const char *format, ...) {
 }
 
 BunchOfLines read_lines_from_stdin(int max_line_length) {
-  int max_lines = 4096;
-  max_line_length = max_line_length ? max_line_length : 256;
+    int max_lines = 4096;
+    max_line_length = max_line_length ? max_line_length : 256;
 
-  char **lines =
-      malloc(max_lines * sizeof(char *) + max_lines * max_line_length);
+    size_t total_memory = max_lines * sizeof(char *) + max_lines * max_line_length;
 
-  int lines_i = 0;
-  lines[lines_i] = (char *)(lines + (max_line_length * (lines_i + 1)));
+    char **lines = malloc(total_memory);
 
-  while (fgets(lines[lines_i], max_line_length, stdin)) {
-    int buffbaby_size = strlen(lines[lines_i]);
-    lines[lines_i][buffbaby_size - 1] = '\0';
-    lines_i++;
-    lines[lines_i] = (char *)(lines + (max_line_length * (lines_i + 1)));
-  }
+    char *line_memory = (char *)(lines + max_lines);
+    for (int i = 0; i < max_lines; i++) {
+        lines[i] = line_memory + i * max_line_length;
+    }
 
-  lines[lines_i] = NULL;
+    int lines_i = 0;
+    while (lines_i < max_lines && fgets(lines[lines_i], max_line_length, stdin)) {
+        lines[lines_i][strcspn(lines[lines_i], "\n")] = '\0';
+        lines_i++;
+    }
 
-  BunchOfLines bunch = {
-      lines_i,       max_line_length, lines,
-      (lines_i - 1), lines[0],        lines[lines_i - 1],
-  };
+    BunchOfLines bunch = {
+        lines_i,            // count
+        max_line_length,    // max_length
+        lines,              // lines
+        lines_i - 1,        // last_index
+        lines[0],           // first
+        lines[lines_i - 1], // last
+    };
 
-  return bunch;
+    return bunch;
 }
 
 void initSDL() {
