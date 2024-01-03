@@ -374,6 +374,9 @@ void render() {
     } else {
       sprintf(text, "%s", menu_items.lines[menu_index]);
     }
+    if (config.hide_file_extensions) {
+      terminate_at_file_extension(&text);
+    }
 
     int selected_state = selected_index == menu_index;
 
@@ -433,6 +436,7 @@ int main(int argc, char **argv) {
 
   log_event("Reading menu items");
   menu_items = read_lines_from_stdin(0);
+
   if(menu_items.count < 1) {
     log_event("No menu items on stdin");
     quit(1);

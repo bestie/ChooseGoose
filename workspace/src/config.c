@@ -30,6 +30,8 @@ void print_config(FILE *output, const Config *config) {
           config->logging_enabled ? "Yes" : "No");
   fprintf(output, "Prefix with Number: %s\n",
           config->prefix_with_number ? "Yes" : "No");
+  fprintf(output, "Hide file extensions: %s\n",
+          config->prefix_with_number ? "Yes" : "No");
   fprintf(output, "Background Color: R:%d, G:%d, B:%d\n",
           config->background_color.r, config->background_color.g,
           config->background_color.b);
@@ -62,6 +64,7 @@ void config_set_defaults(Config *config) {
   strcpy(config->title, "");
   strcpy(config->font_filepath, "assets/font.ttf");
   strcpy(config->background_image_filepath, "assets/bg_no_sky.png");
+  config->hide_file_extensions = 0;
   config->font_size = 18;
   config->top_padding = 30;
   config->bottom_padding = 30;
@@ -147,6 +150,10 @@ int parse_config_yaml_file(Config *config, const char *filename) {
       } else if (strcmp(key, "prefix_with_number") == 0) {
         yaml_parser_parse(&parser, &event);
         config->prefix_with_number =
+            parse_boolean((char *)event.data.scalar.value);
+      } else if (strcmp(key, "hide_file_extensions") == 0) {
+        yaml_parser_parse(&parser, &event);
+        config->hide_file_extensions =
             parse_boolean((char *)event.data.scalar.value);
       } else if (strcmp(key, "background_color") == 0) {
         yaml_parser_parse(&parser, &event);

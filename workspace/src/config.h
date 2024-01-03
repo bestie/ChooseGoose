@@ -19,6 +19,7 @@ typedef struct {
   int text_selected_border_size;
   int start_at_nth;
   int logging_enabled;
+  int hide_file_extensions;
   int prefix_with_number;
   Color background_color;
   Color text_color;
