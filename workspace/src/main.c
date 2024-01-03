@@ -408,8 +408,18 @@ void first_render() {
   render();
 }
 
+void signal_handler(int signal_number) {
+  printf("Caught signal %d\n", signal_number);
+  if(signal_number == 2 || signal_number == 15) {
+    quit(signal_number);
+  }
+}
+
 int main(int argc, char **argv) {
   log_event("Starting up");
+
+  signal(SIGINT, signal_handler);
+  signal(SIGTERM, signal_handler);
 
   config_set_defaults(&config);
   int result = parse_config_yaml_file(&config, "config.yaml");
