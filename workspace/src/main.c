@@ -1,24 +1,24 @@
 #include <SDL/SDL_events.h>
 #include <SDL/SDL_image.h>
+#include <SDL/SDL_keysym.h>
 #include <SDL/SDL_ttf.h>
+#include <SDL/SDL_video.h>
+
+#include <signal.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 
-#include "SDL/SDL_keysym.h"
-#include "SDL/SDL_video.h"
+#include "cli_opts.h"
 
 #define MAX_MENU_ITEMS 4096
 #define MAX_LINE_LENGTH 255
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
-#define BITS_PER_PIXEL 32
 #define MENU_ITEM_WIDTH 600
 #define MENU_ITEM_PADDING 4
 
@@ -62,7 +62,6 @@ typedef struct {
   int count;
   int max_length;
   char **lines;
-  int last_index;
   char *first;
   char *last;
 } BunchOfLines;
@@ -71,6 +70,7 @@ BunchOfLines menu_items;
 Uint32 background_color;
 Config config;
 
+FILE *log_file;
 int menu_item_height;
 int menu_height;
 int menu_max_items;
@@ -110,18 +110,30 @@ void terminate_at_file_extension(char *filename) {
   }
 }
 
-FILE *log_target() {
-  static FILE *log_file;
-
-  if(!log_file) {
-    log_file = fopen("events.log", "w");
+void set_log_target() {
+  if (config.logging_enabled) {
+    fprintf(stderr, "Logging enabled\n");
+    if (strlen(config.log_filepath) > 0) {
+      fprintf(stderr, "Logging to file `%s`\n", config.log_filepath);
+      log_file = fopen(config.log_filepath, "a");
+      fprintf(stderr, "File pointer = %p\n", log_file);
+    }
+    if (!log_file) {
+      log_file = stderr;
+      fprintf(log_file,
+              "Unable to open log file, falling back to stderr `%s`\n",
+              config.log_filepath);
+    }
   }
-
-  return log_file;
 }
 
 void log_event(const char *format, ...) {
-  FILE *output = log_target();
+  if (!log_file) {
+    return;
+  }
+  fprintf(stderr, "logging event to %p\n", log_file);
+
+  FILE *output = log_file;
   char message[255];
 
   time_t current_time;
@@ -144,34 +156,34 @@ void log_event(const char *format, ...) {
 }
 
 BunchOfLines read_lines_from_stdin() {
-    int max_lines = MAX_MENU_ITEMS;
-    int max_line_length = MAX_LINE_LENGTH;
+  int max_lines = MAX_MENU_ITEMS;
+  int max_line_length = MAX_LINE_LENGTH;
 
-    size_t total_memory = max_lines * sizeof(char *) + max_lines * max_line_length;
+  size_t total_memory =
+      max_lines * sizeof(char *) + max_lines * max_line_length;
 
-    char **lines = malloc(total_memory);
+  char **lines = malloc(total_memory);
 
-    char *line_memory = (char *)(lines + max_lines);
-    for (int i = 0; i < max_lines; i++) {
-        lines[i] = line_memory + i * max_line_length;
-    }
+  char *line_memory = (char *)(lines + max_lines);
+  for (int i = 0; i < max_lines; i++) {
+    lines[i] = line_memory + i * max_line_length;
+  }
 
-    int lines_i = 0;
-    while (lines_i < max_lines && fgets(lines[lines_i], max_line_length, stdin)) {
-        lines[lines_i][strcspn(lines[lines_i], "\n")] = '\0';
-        lines_i++;
-    }
+  int lines_i = 0;
+  while (lines_i < max_lines && fgets(lines[lines_i], max_line_length, stdin)) {
+    lines[lines_i][strcspn(lines[lines_i], "\n")] = '\0';
+    lines_i++;
+  }
 
-    BunchOfLines bunch = {
-        lines_i,            // count
-        max_line_length,    // max_length
-        lines,              // lines
-        lines_i - 1,        // last_index
-        lines[0],           // first
-        lines[lines_i - 1], // last
-    };
+  BunchOfLines bunch = {
+      .count = lines_i,
+      .max_length = max_line_length,
+      .lines = lines,
+      .first = lines[0],
+      .last = lines[lines_i - 1],
+  };
 
-    return bunch;
+  return bunch;
 }
 
 void initSDL() {
@@ -186,9 +198,10 @@ void initSDL() {
             font_pixel_height);
 
   log_event("SDL_SetVideoMode(SCREEN_WIDTH=%d, SCREEN_HEIGHT=%d, bpp=%d)",
-            SCREEN_WIDTH, SCREEN_HEIGHT, BITS_PER_PIXEL);
-  screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, BITS_PER_PIXEL,
-                            SDL_HWSURFACE | SDL_DOUBLEBUF);
+            config.screen_width, config.screen_height, config.bits_per_pixel);
+
+  screen = SDL_SetVideoMode(config.screen_width, config.screen_height,
+                            config.bits_per_pixel, SDL_SWSURFACE);
 
   SDL_WM_SetCaption(config.title, NULL);
   SDL_EnableKeyRepeat(400, 50);
@@ -206,7 +219,7 @@ void cleanup() {
   TTF_Quit();
   IMG_Quit();
   SDL_Quit();
-  fclose(log_target());
+  fclose(log_file);
 }
 
 void quit(int exit_code) {
@@ -264,9 +277,7 @@ void enable_repeat() {
   button_repeat_first = 1;
 }
 
-void disable_repeat() {
-  button_repeat_active = 0;
-}
+void disable_repeat() { button_repeat_active = 0; }
 
 void handle_dpad(SDL_JoyHatEvent event) {
   // log_event("D-Pad movement: hat %d, value: %d", event.hat, event.value);
@@ -373,7 +384,7 @@ void render() {
 
     SDL_Surface *title_surface =
         create_text_surface(config.title, config.text_color);
-    SDL_Rect dest = {config.left_padding, header_padding, SCREEN_WIDTH,
+    SDL_Rect dest = {config.left_padding, header_padding, config.screen_width,
                      menu_item_height};
     SDL_BlitSurface(title_surface, NULL, screen, &dest);
 
@@ -432,7 +443,7 @@ void render() {
     SDL_Rect dest;
     dest.x = config.left_padding;
     dest.y = menu_y_offset + i * menu_item_height;
-    dest.w = SCREEN_WIDTH;
+    dest.w = config.screen_width;
     dest.h = 0;
 
     SDL_Surface *menu_item = create_menu_item(text, selected_state);
@@ -444,15 +455,21 @@ void render() {
 }
 
 void first_render() {
-  if (strlen(config.background_image_filepath)) {
+  if (strlen(config.background_image_filepath) &&
+      access(config.background_image_filepath, F_OK) != -1) {
+    fprintf(stderr, "Background image is %s\n",
+            config.background_image_filepath);
     background_image = IMG_Load(config.background_image_filepath);
+  } else {
+    fprintf(stderr, "No background image\n");
   }
   background_color =
       SDL_MapRGB(screen->format, config.background_color.r,
                  config.background_color.g, config.background_color.b);
 
   menu_item_height = font_pixel_height + MENU_ITEM_PADDING;
-  menu_height = SCREEN_HEIGHT - (config.top_padding + config.bottom_padding);
+  menu_height =
+      config.screen_height - (config.top_padding + config.bottom_padding);
   menu_max_items = menu_height / menu_item_height;
 
   log_event("menu height = %d, menu_max_itemis=%d", menu_height,
@@ -462,38 +479,40 @@ void first_render() {
 
 void signal_handler(int signal_number) {
   printf("Caught signal %d\n", signal_number);
-  if(signal_number == 2 || signal_number == 15) {
+  if (signal_number == 2 || signal_number == 15) {
     quit(signal_number);
   }
 }
 
 int main(int argc, char **argv) {
-  log_event("Starting up");
-
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
 
   config_set_defaults(&config);
+  parse_command_line_options(argc, argv, &config);
+  set_log_target();
+  fprintf(stderr, "Log file = `%s`", config.log_filepath);
 
+  log_event("HONK HONK");
   log_event("Setting starting selection to %d", config.start_at_nth - 1);
   selected_index = config.start_at_nth - 1;
 
   log_event("Reading menu items");
   menu_items = read_lines_from_stdin();
 
-  if(menu_items.count < 1) {
+  if (menu_items.count < 1) {
     log_event("No menu items on stdin");
     quit(1);
   }
 
   log_event("Menu items count=%d", menu_items.count);
-  log_event("  first=%s", menu_items.lines[0]);
-  log_event("   last=%s", menu_items.lines[menu_items.count - 1]);
+  log_event("  first =%s", menu_items.lines[0]);
+  log_event("  last  =%s", menu_items.lines[menu_items.count - 1]);
 
   log_event("SDL starting");
   initSDL();
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
-    log_event("Unable to init SDL: %s\n", SDL_GetError());
+    fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
     quit(1);
   }
 
@@ -528,12 +547,13 @@ int main(int argc, char **argv) {
     }
 
     // No user input - do button repeat
-    if(!poll_result && button_repeat_active) {
+    if (!poll_result && button_repeat_active) {
       time_since_last_event = SDL_GetTicks() - last_event_at;
       time_since_last_repeat = SDL_GetTicks() - last_repeat_at;
 
-      if(time_since_last_event > BUTTON_REPEAT_DELAY_MS && time_since_last_repeat > BUTTON_REPEAT_INTERVAL) {
-        handleInput(event); //repeat the input event
+      if (time_since_last_event > BUTTON_REPEAT_DELAY_MS &&
+          time_since_last_repeat > BUTTON_REPEAT_INTERVAL) {
+        handleInput(event); // repeat the input event
         render();
       }
     }

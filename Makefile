@@ -50,7 +50,8 @@ tail_rg:
 # Compile and run the app natively
 .PHONY: test
 test: $(NATIVE_EXECUTABLE)
-	cd workspace && cat ../RG/MD_rom_list.txt | sort | binx64/$(PROJECT_SHORT)
+	cat RG/MD_rom_list.txt | sort | workspace/binx64/$(PROJECT_SHORT) \
+	  --title "Title from args" --text-color FF00FF
 
 $(NATIVE_EXECUTABLE): $(WORKSPACE_DIR)/src/*
 	cd workspace && make -f Makefile.local clean all

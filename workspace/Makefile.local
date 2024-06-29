@@ -5,7 +5,7 @@
 ifeq ($(shell uname -s), Darwin) # macOS
     CFLAGS = -g -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf -lSDL_image -lyaml
 else ifeq ($(shell uname -s), Linux)
-    CFLAGS = -Wall -lSDLmain -lSDL -lSDL_ttf
+    CFLAGS = -g -Wall -lSDLmain -lSDL -lSDL_ttf -lSDL_image -lyaml
 endif
 
 CC = gcc
