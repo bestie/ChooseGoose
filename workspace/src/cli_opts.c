@@ -25,8 +25,6 @@ void config_set_defaults(Config *config) {
   config->screen_height = 480;
   config->bits_per_pixel = 32;
   strcpy(config->title, "");
-  strcpy(config->font_filepath, "choosegoose_font.ttf");
-  strcpy(config->background_image_filepath, "choosegoose_bg.png");
   config->font_size = 18;
   config->top_padding = 30;
   config->bottom_padding = 30;
@@ -161,11 +159,7 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       strncpy(config->font_filepath, optarg, 256);
       break;
     case 6:
-      if (strcmp(optarg, "none") == 0) {
-        strncpy(config->background_image_filepath, "", 255);
-      } else {
-        strncpy(config->background_image_filepath, optarg, 255);
-      }
+      strncpy(config->background_image_filepath, optarg, 255);
       break;
     case 7:
       config->font_size = strtol(optarg, NULL, 10);

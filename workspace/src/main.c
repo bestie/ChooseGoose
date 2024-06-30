@@ -14,13 +14,13 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "background_image.c"
 #include "cli_opts.h"
 #include "font.c"
 
 #define MAX_MENU_ITEMS 4096
 #define MAX_LINE_LENGTH 255
 
-#define MENU_ITEM_WIDTH 600
 #define MENU_ITEM_PADDING 4
 
 #define BUTTON_A 0
@@ -462,15 +462,29 @@ void render() {
   SDL_Flip(screen);
 }
 
-void first_render() {
+void set_background_image() {
+  fprintf(stderr, "Background image file path is `%s`\n",
+          config.background_image_filepath);
+  if (strcmp(config.background_image_filepath, "none") == 0) {
+    return;
+  }
+
   if (strlen(config.background_image_filepath) &&
       access(config.background_image_filepath, R_OK) != -1) {
-    fprintf(stderr, "Background image is %s\n",
+    fprintf(stderr, "Loading background image `%s`\n",
             config.background_image_filepath);
     background_image = IMG_Load(config.background_image_filepath);
   } else {
-    fprintf(stderr, "No background image\n");
+    fprintf(stderr, "No background image using default\n");
+    SDL_RWops *rw =
+        SDL_RWFromMem(default_background_image, default_background_image_len);
+    background_image = IMG_Load_RW(rw, 1);
   }
+}
+
+void first_render() {
+  set_background_image();
+
   background_color =
       SDL_MapRGB(screen->format, config.background_color.r,
                  config.background_color.g, config.background_color.b);

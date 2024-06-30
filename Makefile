@@ -53,8 +53,17 @@ tail_rg:
 test: $(NATIVE_EXECUTABLE)
 	cat RG/MD_rom_list.txt | sort | workspace/binx64/$(PROJECT_SHORT)
 
-$(NATIVE_EXECUTABLE): $(COMPILED_FONT) $(WORKSPACE_DIR)/src/*
-	cd workspace && make -f Makefile.local clean all
+.PHONY: bin
+bin: $(NATIVE_EXECUTABLE)
+
+### Embedded background image #################################################
+
+BACKGROUND_IMAGE = assets/bg.png
+COMPILED_BG_IMAGE = build/background_image.c
+
+$(COMPILED_BG_IMAGE): $(BACKGROUND_IMAGE)
+	cp $(BACKGROUND_IMAGE) build/default_background_image
+	cd build && xxd -i default_background_image $(PROJECT_ROOT)/$@
 
 ### Embedded font compilation ##################################################
 
@@ -80,6 +89,9 @@ $(FONT_DOWNLOAD):
 		--directory-prefix=assets
 
 ###############################################################################
+
+$(NATIVE_EXECUTABLE): $(COMPILED_FONT) $(COMPILED_BG_IMAGE) $(WORKSPACE_DIR)/src/*
+	cd workspace && make -f Makefile.local clean all
 
 .PHONY: clean
 clean:
