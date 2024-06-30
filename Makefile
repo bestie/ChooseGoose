@@ -1,9 +1,22 @@
 # Project meta-Makefile for running all project tasks, Docker builds, compilation, dependencies, deployment, etc.
 
+PLATFORM := $(shell uname -s)
+ARCH := $(shell uname -m)
+LIBC_VERSION := $(shell ldd --version 2>&1 | head -n 1 | awk '{print $$NF}')
+BUILD_DIR := build/$(PLATFORM)-$(ARCH)-libc$(LIBC_VERSION)
+
+ifeq ($(PLATFORM), Darwin) # macOS
+    CFLAGS = -g -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf -lSDL_image -lyaml
+	CC ?= clang
+else ifeq ($(PLATFORM)), Linux)
+    CFLAGS = -g -Wall -lSDLmain -lSDL -lSDL_ttf -lSDL_image -lyaml
+	CC ?= gcc
+endif
+
 PROJECT_NAME=ChooseGoose
-PROJECT_SHORT=choose_goose
+PROJECT_SHORT=choosegoose
 PROJECT_ROOT := $(shell pwd)
-IMAGE_TAG=rg35xx_choose_goose:latest
+IMAGE_TAG=rg35xx_choosegoose:latest
 WORKSPACE_DIR=$(PROJECT_ROOT)/workspace
 BIN_DIR=$(WORKSPACE_DIR)/bin
 EXECUTABLE=$(BIN_DIR)/$(PROJECT_SHORT)
@@ -11,13 +24,21 @@ DESTINATION_DIR=RG/$(PROJECT_NAME)
 RG_APPS=/mnt/mmc/Roms/APPS
 RG_DESTINATION=$(RG_APPS)/$(PROJECT_NAME)
 
-NATIVE_EXECUTABLE=$(WORKSPACE_DIR)/binx64/$(PROJECT_SHORT)
+INCLUDES = -Iworkspace/include -Ibuild
+OBJ_DIR = $(BUILD_DIR)/obj
+BIN_DIR = $(BUILD_DIR)/bin
+TARGET = $(BIN_DIR)/$(PROJECT_SHORT)
+SRC_DIR = workspace/src
 
-$(EXECUTABLE): $(WORKSPACE_DIR)/src/* .docker_build
-	docker run --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash --login -c make
-	mkdir -p $(DESTINATION_DIR)
-	cp $(BIN_DIR)/* $(DESTINATION_DIR)
-	@echo "✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅"
+SOURCES = $(wildcard $(SRC_DIR)/*.c)
+OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+
+# $(EXECUTABLE): $(WORKSPACE_DIR)/src/* $(COMPILED_BG_IMAGE) $(COMPILED_FONT)
+# 	docker run --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash --login -c make
+# 	mkdir -p $(DESTINATION_DIR)
+# 	cp $(BIN_DIR)/* $(DESTINATION_DIR)
+# 	@echo "✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅"
+
 
 .PHONY: rg_executable
 rg_executable: $(EXECUTABLE)
@@ -50,11 +71,11 @@ tail_rg:
 
 # Compile and run the app natively
 .PHONY: test
-test: $(NATIVE_EXECUTABLE)
-	cat RG/MD_rom_list.txt | sort | workspace/binx64/$(PROJECT_SHORT)
+test: $(TARGET)
+	cat RG/MD_rom_list.txt | sort | $(TARGET)
 
 .PHONY: bin
-bin: $(NATIVE_EXECUTABLE)
+bin: $(TARGET)
 
 ### Embedded background image #################################################
 
@@ -75,7 +96,6 @@ COMPILED_FONT = build/font.c
 font: $(COMPILED_FONT)
 
 $(COMPILED_FONT): $(TTF_FONT_FILE)
-	mkdir -p workspace/include
 	cd build/fonts && xxd -i default_font $(PROJECT_ROOT)/$@
 
 $(TTF_FONT_FILE): $(FONT_DOWNLOAD)
@@ -90,14 +110,22 @@ $(FONT_DOWNLOAD):
 
 ###############################################################################
 
-$(NATIVE_EXECUTABLE): $(COMPILED_FONT) $(COMPILED_BG_IMAGE) $(WORKSPACE_DIR)/src/*
-	cd workspace && make -f Makefile.local clean all
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+$(TARGET): $(BIN_DIR) $(COMPILED_FONT) $(COMPILED_BG_IMAGE) $(OBJECTS)
+	$(CC) $(OBJECTS) -o $@ $(CFLAGS)
 
 .PHONY: clean
 clean:
 	rm -rf build/*
-	cd workspace && make clean
-	cd workspace && make -f Makefile.local clean
 
 .PHONY: clean_rg
 clean_rg:
