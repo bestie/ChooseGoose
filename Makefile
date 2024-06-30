@@ -2,8 +2,9 @@
 
 PROJECT_NAME=ChooseGoose
 PROJECT_SHORT=choose_goose
+PROJECT_ROOT := $(shell pwd)
 IMAGE_TAG=rg35xx_choose_goose:latest
-WORKSPACE_DIR := $(shell pwd)/workspace
+WORKSPACE_DIR=$(PROJECT_ROOT)/workspace
 BIN_DIR=$(WORKSPACE_DIR)/bin
 EXECUTABLE=$(BIN_DIR)/$(PROJECT_SHORT)
 DESTINATION_DIR=RG/$(PROJECT_NAME)
@@ -50,14 +51,39 @@ tail_rg:
 # Compile and run the app natively
 .PHONY: test
 test: $(NATIVE_EXECUTABLE)
-	cat RG/MD_rom_list.txt | sort | workspace/binx64/$(PROJECT_SHORT) \
-	  --title "Title from args" --text-color FF00FF
+	cat RG/MD_rom_list.txt | sort | workspace/binx64/$(PROJECT_SHORT)
 
-$(NATIVE_EXECUTABLE): $(WORKSPACE_DIR)/src/*
+$(NATIVE_EXECUTABLE): $(COMPILED_FONT) $(WORKSPACE_DIR)/src/*
 	cd workspace && make -f Makefile.local clean all
+
+### Embedded font compilation ##################################################
+
+FONT_DOWNLOAD = assets/dejavu-fonts-ttf-2.37.tar.bz2 
+TTF_FONT_FILE = build/fonts/font.ttf
+COMPILED_FONT = build/font.c
+
+.PHONY: font
+font: $(COMPILED_FONT)
+
+$(COMPILED_FONT): $(TTF_FONT_FILE)
+	mkdir -p workspace/include
+	cd build/fonts && xxd -i default_font $(PROJECT_ROOT)/$@
+
+$(TTF_FONT_FILE): $(FONT_DOWNLOAD)
+	mkdir -p build/fonts
+	tar --directory build/fonts -xf $(FONT_DOWNLOAD)
+	cp build/fonts/dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono.ttf build/fonts/default_font
+
+$(FONT_DOWNLOAD):
+	mkdir -p assets
+	wget https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2 \
+		--directory-prefix=assets
+
+###############################################################################
 
 .PHONY: clean
 clean:
+	rm -rf build/*
 	cd workspace && make clean
 	cd workspace && make -f Makefile.local clean
 

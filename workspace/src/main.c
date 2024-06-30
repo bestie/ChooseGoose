@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include "cli_opts.h"
+#include "font.c"
 
 #define MAX_MENU_ITEMS 4096
 #define MAX_LINE_LENGTH 255
@@ -191,8 +192,15 @@ void initSDL() {
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
   SDL_ShowCursor(SDL_DISABLE);
-  log_event("Font loading from %s", config.font_filepath);
-  font = TTF_OpenFont(config.font_filepath, config.font_size);
+  if (strlen(config.font_filepath) > 1 &&
+      access(config.font_filepath, R_OK) != -1) {
+    log_event("Font loading from %s", config.font_filepath);
+    font = TTF_OpenFont(config.font_filepath, config.font_size);
+  } else {
+    log_event("Font file not set or not readable `%s`", config.font_filepath);
+    SDL_RWops *rw = SDL_RWFromMem(default_font, default_font_len);
+    font = TTF_OpenFontRW(rw, 1, 16); // The 16 is the font size in points
+  }
   font_pixel_height = TTF_FontHeight(font);
   log_event("Font loaded size=%d, font_height=%dpx", config.font_size,
             font_pixel_height);
@@ -456,7 +464,7 @@ void render() {
 
 void first_render() {
   if (strlen(config.background_image_filepath) &&
-      access(config.background_image_filepath, F_OK) != -1) {
+      access(config.background_image_filepath, R_OK) != -1) {
     fprintf(stderr, "Background image is %s\n",
             config.background_image_filepath);
     background_image = IMG_Load(config.background_image_filepath);
