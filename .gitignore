@@ -1,9 +1,3 @@
 .DS_Store
-.build
-workspace/obj
-workspace/bin
-workspace/objx64
-workspace/binx64
-workspace/event_log.txt
+build/*
 RG/*
-

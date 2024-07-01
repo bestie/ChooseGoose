@@ -20,15 +20,12 @@ LD ?= $(CROSS_COMPILE)ld
 AR ?= $(CROSS_COMPILE)ar
 AS ?= $(CROSS_COMPILE)as
 LDFLAGS ?= -L$(PREFIX)/lib -lSDL -lSDLmain -lSDL_image -lSDL_ttf
-INCLUDES = -Iworkspace/include -Ibuild -I$(PREFIX)/include
+INCLUDES = -Ibuild -I$(PREFIX)/include
 
 PROJECT_NAME=ChooseGoose
 PROJECT_SHORT=choosegoose
 PROJECT_ROOT := $(shell pwd)
 IMAGE_TAG=rg35xx_choosegoose:latest
-WORKSPACE_DIR=$(PROJECT_ROOT)/workspace
-BIN_DIR=$(WORKSPACE_DIR)/bin
-EXECUTABLE=$(BIN_DIR)/$(PROJECT_SHORT)
 DESTINATION_DIR=RG/$(PROJECT_NAME)
 RG_APPS=/mnt/mmc/Roms/APPS
 RG_DESTINATION=$(RG_APPS)/$(PROJECT_NAME)
@@ -36,7 +33,7 @@ RG_DESTINATION=$(RG_APPS)/$(PROJECT_NAME)
 OBJ_DIR = $(BUILD_DIR)/obj
 BIN_DIR = $(BUILD_DIR)/bin
 TARGET = $(BIN_DIR)/$(PROJECT_SHORT)
-SRC_DIR = workspace/src
+SRC_DIR = src
 
 SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
@@ -134,14 +131,14 @@ clean_rg:
 	adb shell rm -rf /mnt/mmc/Roms/APPS/ChooseGoos*
 
 .PHONY: shell
-shell: .docker_build
-	docker run --interactive --tty --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash
+shell: build/.docker-build
+	docker run --interactive --tty --volume "$(pwd):/root" $(IMAGE_TAG) /bin/bash
 
 .PHONY: docker-build
 docker-build: build/.docker-build
 
-build/.docker-build: Dockerfile Makefile workspace/src/*
-	docker build --tag $(IMAGE_TAG) . && touch .docker_build
+build/.docker-build: Dockerfile Makefile $(SOURCES)
+	docker build --tag $(IMAGE_TAG) . && touch build/.docker-build
 
 .PHONY: docker_clean
 docker_clean:

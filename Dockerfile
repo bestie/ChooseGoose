@@ -20,7 +20,7 @@ RUN apt-get update \
       libsdl-ttf2.0-dev \
       libsdl-image1.2-dev \
       vim \
-     ripgrep \
+      ripgrep \
     && apt-get -y autoremove \
     && apt-get -y clean
 
