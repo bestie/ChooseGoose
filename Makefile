@@ -60,14 +60,9 @@ deploy: clean clean_rg $(EXECUTABLE) push
 .PHONY: push
 push:
 	cp $(EXECUTABLE) RG/${PROJECT_NAME}
-	cp $(WORKSPACE_DIR)/config.yaml RG/${PROJECT_NAME}
 	mkdir -p $(DESTINATION_DIR)
 	mkdir -p $(DESTINATION_DIR)/lib
 	mkdir -p $(DESTINATION_DIR)/assets
-	cp $(WORKSPACE_DIR)/assets/bg_no_sky.png  $(DESTINATION_DIR)/assets
-	cp $(WORKSPACE_DIR)/assets/font.ttf       $(DESTINATION_DIR)/assets
-	cp -r libyaml-armv7/lib/libyaml-0.so.2 $(DESTINATION_DIR)/lib
-	adb push --sync RG/* $(RG_APPS)
 	adb push --sync RG/* $(RG_APPS)
 	adb shell ls -l $(RG_DESTINATION)
 
