@@ -24,16 +24,7 @@ RUN apt-get update \
     && apt-get -y autoremove \
     && apt-get -y clean
 
-RUN mkdir -p /root/workspace
-RUN mkdir -p /root/build
-
-WORKDIR /root
+WORKDIR /root/choosegoose
 COPY . .
-
-# Build for Linux, native architecture
-RUN make goose
-
-# Cross compile for RG35XX etc
-RUN bash -c "source cross_compilation_env.sh && make goose"
 
 CMD ["/bin/bash"]

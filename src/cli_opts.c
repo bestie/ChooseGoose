@@ -43,7 +43,7 @@ void config_set_defaults(Config *config) {
 
 void print_usage() {
   fprintf(stdout,
-          "ChooseGoose is a silly graphical item selection program orginally "
+          "ChooseGoose is a silly interactive graphical menu program originally "
           "created for the Anbernic RG35XX handheld gaming system.\n");
   fprintf(stdout, "\n");
   fprintf(stdout, "Given an input list of new-line separated items on stdin, "
@@ -153,10 +153,10 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       config->bits_per_pixel = strtol(optarg, NULL, 10);
       break;
     case 4:
-      strncpy(config->title, optarg, 256);
+      strncpy(config->title, optarg, 255);
       break;
     case 5:
-      strncpy(config->font_filepath, optarg, 256);
+      strncpy(config->font_filepath, optarg, 255);
       break;
     case 6:
       strncpy(config->background_image_filepath, optarg, 255);

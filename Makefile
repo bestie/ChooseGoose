@@ -10,6 +10,7 @@ BUILD_DIR = build/$(PLATFORM)-$(ARCH)-$(LIBC)
 
 ifeq ($(PLATFORM), Darwin) # macOS
     CFLAGS = -g -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf -lSDL_image
+    PREFIX="/usr/local"
 else ifeq ($(PLATFORM)), Linux)
     CFLAGS = -g -Wall -lSDLmain -lSDL -lSDL_ttf -lSDL_image
 endif
@@ -20,12 +21,11 @@ LD ?= $(CROSS_COMPILE)ld
 AR ?= $(CROSS_COMPILE)ar
 AS ?= $(CROSS_COMPILE)as
 LDFLAGS ?= -L$(PREFIX)/lib -lSDL -lSDLmain -lSDL_image -lSDL_ttf
-INCLUDES = -Ibuild -I$(PREFIX)/include
+INCLUDES = -Iinclude -Ibuild -I$(PREFIX)/include
 
 PROJECT_NAME=ChooseGoose
 PROJECT_SHORT=choosegoose
 PROJECT_ROOT := $(shell pwd)
-IMAGE_TAG=rg35xx_choosegoose:latest
 DESTINATION_DIR=RG/$(PROJECT_NAME)
 RG_APPS=/mnt/mmc/Roms/APPS
 RG_DESTINATION=$(RG_APPS)/$(PROJECT_NAME)
@@ -39,42 +39,7 @@ SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 .PHONY: goose
-bin: $(TARGET)
-
-# $(EXECUTABLE): $(WORKSPACE_DIR)/src/* $(COMPILED_BG_IMAGE) $(COMPILED_FONT)
-# 	docker run --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash --login -c make
-# 	mkdir -p $(DESTINATION_DIR)
-# 	cp $(BIN_DIR)/* $(DESTINATION_DIR)
-# 	@echo "✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅"
-
-.PHONY: rg_executable
-rg_executable: $(EXECUTABLE)
-
-.PHONY: deploy
-deploy: clean clean_rg $(EXECUTABLE) push
-	@echo "🚢"
-
-.PHONY: push
-push:
-	cp $(EXECUTABLE) RG/${PROJECT_NAME}
-	mkdir -p $(DESTINATION_DIR)
-	mkdir -p $(DESTINATION_DIR)/lib
-	mkdir -p $(DESTINATION_DIR)/assets
-	adb push --sync RG/* $(RG_APPS)
-	adb shell ls -l $(RG_DESTINATION)
-
-# Tail the app's log on the device
-.PHONY: tail_rg
-tail_rg:
-	adb shell touch $(RG_DESTINATION)/events.log
-	adb shell touch $(RG_DESTINATION)/goose.log
-	echo " ~~~ Open the app 👉 🎮"
-	adb shell busybox tail -f $(RG_DESTINATION)/*.log
-
-# Compile and run the app natively
-.PHONY: test
-test: $(TARGET)
-	cat RG/MD_rom_list.txt | sort | $(TARGET)
+goose: $(TARGET)
 
 ### Embedded background image #################################################
 
@@ -107,7 +72,7 @@ $(FONT_DOWNLOAD):
 	wget https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2 \
 		--directory-prefix=build
 
-###############################################################################
+### Compile and link ##########################################################
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
@@ -130,16 +95,29 @@ clean:
 clean_rg:
 	adb shell rm -rf /mnt/mmc/Roms/APPS/ChooseGoos*
 
-.PHONY: shell
-shell: build/.docker-build
-	docker run --interactive --tty --volume "$(pwd):/root" $(IMAGE_TAG) /bin/bash
+### Docker #####################################################################
+
+DOCKER_TAG ?= choosegoose:latest
+DOCKER_BUILD_CACHE_FILE = build/.docker-build
 
 .PHONY: docker-build
-docker-build: build/.docker-build
+docker-build: $(DOCKER_BUILD_CACHE_FILE)
 
-build/.docker-build: Dockerfile Makefile $(SOURCES)
-	docker build --tag $(IMAGE_TAG) . && touch build/.docker-build
+$(DOCKER_BUILD_CACHE_FILE): Dockerfile Makefile $(SOURCES)
+	docker build --tag $(DOCKER_TAG) . && touch $(DOCKER_BUILD_CACHE_FILE)
 
-.PHONY: docker_clean
+.PHONY: docker-compile
+docker-compile: docker-build
+	docker run --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) make goose
+
+.PHONY: docker-compile-rg35xx
+docker-compile-rg35xx: docker-build
+	docker run --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) bash -c "source cross_compilation_env.sh && make goose"
+
+.PHONY: docker-shell
+shell: $(DOCKER_BUILD_CACHE_FILE)
+	docker run --rm --interactive --tty --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) /bin/bash
+
+.PHONY: docker-clean
 docker_clean:
-	docker rmi $(IMAGE_TAG)
+	docker rmi $(DOCKER_TAG) && rm $(DOCKER_BUILD_CACHE_FILE)

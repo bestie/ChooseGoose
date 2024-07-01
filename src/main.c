@@ -37,29 +37,6 @@ TTF_Font *font = NULL;
 SDL_Joystick *joystick = NULL;
 
 typedef struct {
-  int r, g, b;
-} Color;
-
-typedef struct {
-  char title[256];
-  char font_filepath[256];
-  char background_image_filepath[256];
-  int font_size;
-  int top_padding;
-  int bottom_padding;
-  int left_padding;
-  int right_padding;
-  int text_selected_border_size;
-  int start_at_nth;
-  int logging_enabled;
-  int hide_file_extensions;
-  int prefix_with_number;
-  Color background_color;
-  Color text_color;
-  Color text_selected_color;
-} Config;
-
-typedef struct {
   int count;
   int max_length;
   char **lines;
@@ -85,23 +62,6 @@ static Color parse_color_from_hex(const char *hex) {
   // Skip the '#' and then read two characters for each color component
   sscanf(hex + 1, "%2x%2x%2x", &color.r, &color.g, &color.b);
   return color;
-}
-
-void config_set_defaults(Config *config) {
-  strcpy(config->title, "");
-  strcpy(config->font_filepath, "assets/font.ttf");
-  strcpy(config->background_image_filepath, "assets/bg_no_sky.png");
-  config->hide_file_extensions = 0;
-  config->font_size = 18;
-  config->top_padding = 30;
-  config->bottom_padding = 30;
-  config->left_padding = 20;
-  config->right_padding = 0;
-  config->start_at_nth = 15;
-  config->prefix_with_number = 0;
-  config->background_color = parse_color_from_hex("#00FFFF");
-  config->text_color = parse_color_from_hex("#000000");
-  config->text_selected_color = parse_color_from_hex("#FF0000");
 }
 
 void terminate_at_file_extension(char *filename) {
