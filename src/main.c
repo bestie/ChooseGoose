@@ -1,8 +1,6 @@
 #include <SDL/SDL_events.h>
 #include <SDL/SDL_image.h>
-#include <SDL/SDL_keysym.h>
 #include <SDL/SDL_ttf.h>
-#include <SDL/SDL_video.h>
 
 #include <signal.h>
 #include <stdbool.h>
@@ -56,13 +54,6 @@ int font_pixel_height;
 int selected_index = 0;
 int button_repeat_active = 0;
 int button_repeat_first = 1;
-
-static Color parse_color_from_hex(const char *hex) {
-  Color color;
-  // Skip the '#' and then read two characters for each color component
-  sscanf(hex + 1, "%2x%2x%2x", &color.r, &color.g, &color.b);
-  return color;
-}
 
 void terminate_at_file_extension(char *filename) {
   char *dot = strrchr(filename, '.');

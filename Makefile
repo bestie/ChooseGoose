@@ -8,11 +8,10 @@ endif
 
 BUILD_DIR = build/$(PLATFORM)-$(ARCH)-$(LIBC)
 
-ifeq ($(PLATFORM), Darwin) # macOS
-    CFLAGS = -g -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf -lSDL_image
-    PREFIX="/usr/local"
+ifeq ($(PLATFORM), Darwin)
+    PREFIX ?= /usr/local
+		MORE_LDS = -framework CoreFoundation -framework Cocoa
 else ifeq ($(PLATFORM)), Linux)
-    CFLAGS = -g -Wall -lSDLmain -lSDL -lSDL_ttf -lSDL_image
 endif
 
 CC ?= $(CROSS_COMPILE)gcc
@@ -20,7 +19,8 @@ CXX ?= $(CROSS_COMPILE)g++
 LD ?= $(CROSS_COMPILE)ld
 AR ?= $(CROSS_COMPILE)ar
 AS ?= $(CROSS_COMPILE)as
-LDFLAGS ?= -L$(PREFIX)/lib -lSDL -lSDLmain -lSDL_image -lSDL_ttf
+LDFLAGS ?= -L$(PREFIX)/lib -lSDL -lSDLmain -lSDL_image -lSDL_ttf $(MORE_LDS)
+CFLAGS = -g -Wall -lSDLmain -lSDL -lSDL_ttf -lSDL_image
 INCLUDES = -Iinclude -Ibuild -I$(PREFIX)/include
 
 PROJECT_NAME=ChooseGoose
