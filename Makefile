@@ -90,7 +90,7 @@ $(COMPILED_BG_IMAGE): $(BACKGROUND_IMAGE)
 
 ### Embedded font compilation ##################################################
 
-FONT_DOWNLOAD = assets/dejavu-fonts-ttf-2.37.tar.bz2 
+FONT_DOWNLOAD = build/dejavu-fonts-ttf-2.37.tar.bz2
 TTF_FONT_FILE = build/fonts/font.ttf
 COMPILED_FONT = build/font.c
 
@@ -106,9 +106,9 @@ $(TTF_FONT_FILE): $(FONT_DOWNLOAD)
 	cp build/fonts/dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono.ttf build/fonts/default_font
 
 $(FONT_DOWNLOAD):
-	mkdir -p assets
+	mkdir -p build
 	wget https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2 \
-		--directory-prefix=assets
+		--directory-prefix=build
 
 ###############################################################################
 
