@@ -1,17 +1,26 @@
-# Project meta-Makefile for running all project tasks, Docker builds, compilation, dependencies, deployment, etc.
+ifdef CROSS_COMPILE
+else
+	PLATFORM := $(shell uname -s)
+	ARCH := $(shell uname -m)
+	LIBC := $(shell ldd --version 2>&1 | head -n 1 | awk '{print $$NF}')
+	PREFIX ?= "/usr"
+endif
 
-PLATFORM := $(shell uname -s)
-ARCH := $(shell uname -m)
-LIBC_VERSION := $(shell ldd --version 2>&1 | head -n 1 | awk '{print $$NF}')
-BUILD_DIR := build/$(PLATFORM)-$(ARCH)-libc$(LIBC_VERSION)
+BUILD_DIR = build/$(PLATFORM)-$(ARCH)-$(LIBC)
 
 ifeq ($(PLATFORM), Darwin) # macOS
-    CFLAGS = -g -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf -lSDL_image -lyaml
-	CC ?= clang
+    CFLAGS = -g -Wall -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreVideo -lSDLmain -lSDL -lSDL_ttf -lSDL_image
 else ifeq ($(PLATFORM)), Linux)
-    CFLAGS = -g -Wall -lSDLmain -lSDL -lSDL_ttf -lSDL_image -lyaml
-	CC ?= gcc
+    CFLAGS = -g -Wall -lSDLmain -lSDL -lSDL_ttf -lSDL_image
 endif
+
+CC ?= $(CROSS_COMPILE)gcc
+CXX ?= $(CROSS_COMPILE)g++
+LD ?= $(CROSS_COMPILE)ld
+AR ?= $(CROSS_COMPILE)ar
+AS ?= $(CROSS_COMPILE)as
+LDFLAGS ?= -L$(PREFIX)/lib -lSDL -lSDLmain -lSDL_image -lSDL_ttf
+INCLUDES = -Iworkspace/include -Ibuild -I$(PREFIX)/include
 
 PROJECT_NAME=ChooseGoose
 PROJECT_SHORT=choosegoose
@@ -24,7 +33,6 @@ DESTINATION_DIR=RG/$(PROJECT_NAME)
 RG_APPS=/mnt/mmc/Roms/APPS
 RG_DESTINATION=$(RG_APPS)/$(PROJECT_NAME)
 
-INCLUDES = -Iworkspace/include -Ibuild
 OBJ_DIR = $(BUILD_DIR)/obj
 BIN_DIR = $(BUILD_DIR)/bin
 TARGET = $(BIN_DIR)/$(PROJECT_SHORT)
@@ -33,12 +41,14 @@ SRC_DIR = workspace/src
 SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
+.PHONY: goose
+bin: $(TARGET)
+
 # $(EXECUTABLE): $(WORKSPACE_DIR)/src/* $(COMPILED_BG_IMAGE) $(COMPILED_FONT)
 # 	docker run --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash --login -c make
 # 	mkdir -p $(DESTINATION_DIR)
 # 	cp $(BIN_DIR)/* $(DESTINATION_DIR)
 # 	@echo "✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅"
-
 
 .PHONY: rg_executable
 rg_executable: $(EXECUTABLE)
@@ -73,9 +83,6 @@ tail_rg:
 .PHONY: test
 test: $(TARGET)
 	cat RG/MD_rom_list.txt | sort | $(TARGET)
-
-.PHONY: bin
-bin: $(TARGET)
 
 ### Embedded background image #################################################
 
@@ -121,7 +128,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 $(TARGET): $(BIN_DIR) $(COMPILED_FONT) $(COMPILED_BG_IMAGE) $(OBJECTS)
-	$(CC) $(OBJECTS) -o $@ $(CFLAGS)
+	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
 .PHONY: clean
 clean:
@@ -132,13 +139,13 @@ clean_rg:
 	adb shell rm -rf /mnt/mmc/Roms/APPS/ChooseGoos*
 
 .PHONY: shell
-shell: docker_build
+shell: .docker_build
 	docker run --interactive --tty --volume "$(WORKSPACE_DIR)":/root/workspace $(IMAGE_TAG) /bin/bash
 
-.PHONY: docker_build
-docker_build: .docker_build
+.PHONY: docker-build
+docker-build: build/.docker-build
 
-.docker_build: Dockerfile
+build/.docker-build: Dockerfile Makefile workspace/src/*
 	docker build --tag $(IMAGE_TAG) . && touch .docker_build
 
 .PHONY: docker_clean

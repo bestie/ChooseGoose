@@ -6,21 +6,34 @@ COPY --from=toolchain-source /opt/ /opt
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
-    && apt-get install -y make gcc g++ \
+    && apt-get install -y \
+      make \
+      gcc \
+      g++ \
+      gdb \
+      git \
+      wget \
+      curl \
+      lbzip2 \
+      xxd \
+      libsdl1.2-dev \
+      libsdl-ttf2.0-dev \
+      libsdl-image1.2-dev \
+      vim \
+     ripgrep \
     && apt-get -y autoremove \
     && apt-get -y clean
 
-RUN apt-get install -y git vim
-
 RUN mkdir -p /root/workspace
 RUN mkdir -p /root/build
-WORKDIR /root/build
-COPY build/build-libyaml .
-RUN ./build-libyaml
 
+WORKDIR /root
+COPY . .
 
-WORKDIR /root/workspace
-COPY workspace/docker_env.sh .
-RUN cat docker_env.sh >> /root/.bashrc
+# Build for Linux, native architecture
+RUN make goose
+
+# Cross compile for RG35XX etc
+RUN bash -c "source cross_compilation_env.sh && make goose"
 
 CMD ["/bin/bash"]
