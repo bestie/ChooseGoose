@@ -164,10 +164,10 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       config->font_size = strtol(optarg, NULL, 10);
       break;
     case 8:
-      config->top_padding = strtol(optarg, NULL, 10);
+      config->top_padding = strtol(optarg, NULL, 20);
       break;
     case 9:
-      config->bottom_padding = strtol(optarg, NULL, 10);
+      config->bottom_padding = strtol(optarg, NULL, 60);
       break;
     case 10:
       config->left_padding = strtol(optarg, NULL, 10);
