@@ -1,17 +1,13 @@
-ifdef CROSS_COMPILE
-else
-	PLATFORM := $(shell uname -s)
-	ARCH := $(shell uname -m)
-	LIBC := $(shell ldd --version 2>&1 | head -n 1 | awk '{print $$NF}')
-	PREFIX ?= "/usr"
-endif
+PLATFORM ?= $(shell uname -s)
+ARCH ?= $(shell uname -m)
+LIBC ?= glibc
+PREFIX ?= "/usr"
 
 BUILD_DIR = build/$(PLATFORM)-$(ARCH)-$(LIBC)
 
 ifeq ($(PLATFORM), Darwin)
-    PREFIX ?= /usr/local
-		MORE_LDS = -framework CoreFoundation -framework Cocoa
-else ifeq ($(PLATFORM)), Linux)
+	PREFIX ?= /usr/local
+	MORE_LDS = -framework CoreFoundation -framework Cocoa
 endif
 
 CC ?= $(CROSS_COMPILE)gcc
@@ -38,8 +34,15 @@ SRC_DIR = src
 SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
+.PHONY: all
+all: docker-compile docker-compile-rg35xx
+
 .PHONY: goose
 goose: $(TARGET)
+
+.PHONY: clean
+clean:
+	rm -rf build/*
 
 ### Embedded background image #################################################
 
@@ -87,18 +90,11 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 $(TARGET): $(BIN_DIR) $(COMPILED_FONT) $(COMPILED_BG_IMAGE) $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
-.PHONY: clean
-clean:
-	rm -rf build/*
-
-.PHONY: clean_rg
-clean_rg:
-	adb shell rm -rf /mnt/mmc/Roms/APPS/ChooseGoos*
-
 ### Docker #####################################################################
 
 DOCKER_TAG ?= choosegoose:latest
 DOCKER_BUILD_CACHE_FILE = build/.docker-build
+RG_EXECUTABLE = build/Linux-arm-uclibcgnueabi/bin/choosegoose
 
 .PHONY: docker-build
 docker-build: $(DOCKER_BUILD_CACHE_FILE)
@@ -107,17 +103,52 @@ $(DOCKER_BUILD_CACHE_FILE): Dockerfile Makefile $(SOURCES)
 	docker build --tag $(DOCKER_TAG) . && touch $(DOCKER_BUILD_CACHE_FILE)
 
 .PHONY: docker-compile
-docker-compile: docker-build
+docker-compile: $(SOURCES) $(DOCKER_BUILD_CACHE_FILE)
 	docker run --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) make goose
 
 .PHONY: docker-compile-rg35xx
-docker-compile-rg35xx: docker-build
+docker-compile-rg35xx: $(SOURCES) $(DOCKER_BUILD_CACHE_FILE)
 	docker run --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) bash -c "source cross_compilation_env.sh && make goose"
 
 .PHONY: docker-shell
-shell: $(DOCKER_BUILD_CACHE_FILE)
+docker-shell: $(DOCKER_BUILD_CACHE_FILE)
 	docker run --rm --interactive --tty --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) /bin/bash
 
 .PHONY: docker-clean
 docker_clean:
 	docker rmi $(DOCKER_TAG) && rm $(DOCKER_BUILD_CACHE_FILE)
+
+### RG35XX #####################################################################
+
+RG_APPS = /mnt/mmc/Roms/APPS
+RG_INSTALL_DIR = $(RG_APPS)/$(PROJECT_NAME)
+
+.PHONY: rg-install
+rg-install:
+	adb shell mkdir -p $(RG_INSTALL_DIR)
+	cp $(RG_EXECUTABLE) RG/ChooseGoose
+	adb push --sync RG/* $(RG_APPS)
+	adb shell ls -l $(RG_APPS)
+	adb shell ls -l $(RG_DESTINATION)
+
+.PHONY: rg-logs
+rg-logs:
+	adb shell touch $(RG_INSTALL_DIR)/log
+	echo " ~~~ Open the app 👉 🎮"
+	adb shell busybox tail -f $(RG_DESTINATION)/log
+	# Get the directory listing and filter for the name of the TV Show
+
+.PHONY: adb-shell
+adb-shell: adb-start
+	adb shell
+
+.PHONY: clean-rg
+clean_rg: adb-start
+	adb start-server
+	adb usb
+	adb shell rm -rf /mnt/mmc/Roms/APPS/ChooseGoos*
+
+.PHONY: adb-start
+	adb start-server
+	adb usb
+
