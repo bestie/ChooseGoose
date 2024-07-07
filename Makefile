@@ -83,11 +83,14 @@ $(OBJ_DIR):
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-$(TARGET): $(BIN_DIR) $(COMPILED_FONT) $(COMPILED_BG_IMAGE) $(OBJECTS)
+$(TARGET): $(BUILD_DIR) $(BIN_DIR) $(COMPILED_FONT) $(COMPILED_BG_IMAGE) $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
 ### Docker #####################################################################
@@ -97,9 +100,9 @@ DOCKER_BUILD_CACHE_FILE = build/.docker-build
 RG_EXECUTABLE = build/Linux-arm-uclibcgnueabi/bin/choosegoose
 
 .PHONY: docker-build
-docker-build: $(DOCKER_BUILD_CACHE_FILE)
+docker-build: $(BUILD_DIR) $(DOCKER_BUILD_CACHE_FILE)
 
-$(DOCKER_BUILD_CACHE_FILE): Dockerfile Makefile $(SOURCES)
+$(DOCKER_BUILD_CACHE_FILE): $(BUILD_DIR) Dockerfile Makefile $(SOURCES)
 	docker build --tag $(DOCKER_TAG) . && touch $(DOCKER_BUILD_CACHE_FILE)
 
 .PHONY: docker-compile
