@@ -31,7 +31,7 @@ void config_set_defaults(Config *config) {
   config->left_padding = 20;
   config->right_padding = 0;
   config->text_selected_border_size = 0;
-  config->start_at_nth = 0;
+  config->start_at_nth = 1;
   config->hide_file_extensions = false;
   config->prefix_with_number = false;
   config->logging_enabled = true;
@@ -91,8 +91,7 @@ void print_usage() {
   fprintf(stdout, "  --left-padding SIZE in px\n");
   fprintf(stdout, "  --right-padding SIZE in px\n");
   fprintf(stdout, "  --text-selected-border-size SIZE in px\n");
-  fprintf(stdout, "  --start-at-nth N \t\t list item to start menu from, "
-                  "default 0 (first)\n");
+  fprintf(stdout, "  --start-at-nth N \t\t list item to start menu from, default 1 (first), set 0 for no initial selection\n");
   fprintf(stdout,
           "  --hide-file-extensions true|false \t\t when using files as input "
           "and output, extensions can be hidden from the user\n");
