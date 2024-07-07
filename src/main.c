@@ -150,7 +150,7 @@ void initSDL() {
   } else {
     log_event("Font file not set or not readable `%s`", config.font_filepath);
     SDL_RWops *rw = SDL_RWFromMem(default_font, default_font_len);
-    font = TTF_OpenFontRW(rw, 1, 16); // The 16 is the font size in points
+    font = TTF_OpenFontRW(rw, 1, config.font_size);
   }
   font_pixel_height = TTF_FontHeight(font);
   log_event("Font loaded size=%d, font_height=%dpx", config.font_size,
