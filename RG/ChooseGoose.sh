@@ -15,12 +15,11 @@ CORE_MAPPING="/mnt/mmc/CFW/config/core_mapping.json"
 random_item_text="I'm Feeling Lucky"
 excluded_systems_file="${HOME}/excluded_systems.txt"
 
-log_file="$HOME/goose.log"
+log_file=/dev/null
 exec >> $log_file 2>&1
-# exec >> /dev/null 2>&1
-#
+
 echo ""
-echo ""
+echo "$0"
 
 convert_to_basenames() {
     local filepaths="$1"

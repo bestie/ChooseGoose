@@ -1,7 +1,8 @@
 #!/bin/sh
 
 # game_launcher.sh - a general purpose game and app launcher for GarlicOS.
-# Author: Stephen Best github.com/bestie
+# Author: Stephen Best
+# Project: https://github.com/bestie/ChooseGoose
 #
 # This shell script is a hack around how the GarlicOS start script
 # (/mnt/mmc/CFW/start) launches the main menu, games, and apps.
@@ -36,11 +37,8 @@ log_file="$HOME/goose.log"
 garlic_game_launch_script="$RETROARCH/command.sh"
 NO_HUP=${NO_HUP-"NO NO_HUP"}
 
-# exec >> $log_file 2>&1
-exec >> /dev/null 2>&1
-
-core="$1"
-rom="$2"
+log_file=/dev/null
+exec >> $log_file 2>&1
 
 function cleanup {
   echo "game_launch.sh exiting"
