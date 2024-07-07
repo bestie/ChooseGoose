@@ -109,6 +109,8 @@ docker-compile: $(SOURCES) $(DOCKER_BUILD_CACHE_FILE)
 .PHONY: docker-compile-rg35xx
 docker-compile-rg35xx: $(SOURCES) $(DOCKER_BUILD_CACHE_FILE)
 	docker run --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) bash -c "source cross_compilation_env.sh && make goose"
+	cp -r RG35XX build/
+	cp $(RG_EXECUTABLE) build/RG35XX/demos/APPS/ChooseGoose/
 
 .PHONY: docker-shell
 docker-shell: $(DOCKER_BUILD_CACHE_FILE)
@@ -127,7 +129,7 @@ RG_INSTALL_DIR = $(RG_APPS)/$(PROJECT_NAME)
 rg-install:
 	adb shell mkdir -p $(RG_INSTALL_DIR)
 	cp $(RG_EXECUTABLE) RG/ChooseGoose
-	adb push --sync RG/* $(RG_APPS)
+	adb push --sync build/RG/* $(RG_APPS)
 	adb shell ls -l $(RG_APPS)
 	adb shell ls -l $(RG_DESTINATION)
 
