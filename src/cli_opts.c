@@ -12,10 +12,8 @@ static Color parse_color_from_hex(const char *hex) {
 }
 
 static bool parsebool(char *string) {
-  if (strcmp(string, "true")) {
+  if (strcmp(string, "true") == 0) {
     return true;
-  } else if (strcmp(string, "false")) {
-    return false;
   }
   return false;
 }
