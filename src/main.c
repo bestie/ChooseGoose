@@ -19,7 +19,7 @@
 #define MAX_MENU_ITEMS 4096
 #define MAX_LINE_LENGTH 255
 
-#define MENU_ITEM_PADDING 4
+#define MENU_ITEM_PADDING 3
 
 #define BUTTON_A 0
 #define BUTTON_B 1
@@ -155,7 +155,6 @@ void initSDL() {
   font = load_font(config.font_filepath, config.font_size);
 
   font_pixel_height = TTF_FontHeight(font);
-  int title_font_pixel_height = TTF_FontHeight(font);
 
   log_event("Font loaded size=%d, font_height=%dpx", config.font_size,
             font_pixel_height);
@@ -201,14 +200,30 @@ SDL_Surface *create_text_surface(char *text, Color color, TTF_Font *font) {
 }
 
 SDL_Surface *create_menu_item(char *text, int selected) {
-  Color color;
+  Color text_color;
+
   if (selected) {
-    color = config.text_selected_color;
+    text_color = config.text_selected_color;
   } else {
-    color = config.text_color;
+    text_color = config.text_color;
   }
 
-  return create_text_surface(text, color, font);
+  SDL_Surface *text_surface = create_text_surface(text, text_color, font);
+
+  if (selected && config.text_selected_background_color.r != NULL) {
+    Color bg = config.text_selected_background_color;
+    Uint32 sdl_bg_color = SDL_MapRGB(screen->format, bg.r, bg.g, bg.b);
+    int menu_item_width = config.screen_width;
+    SDL_Surface *text_bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, menu_item_width, font_pixel_height, config.bits_per_pixel, 0,0,0,0);
+    SDL_Rect fillRect = { 0, 0, text_bg_surface->w, text_bg_surface->h };
+    SDL_FillRect(text_bg_surface, &fillRect, sdl_bg_color);
+
+    SDL_BlitSurface(text_surface, NULL, text_bg_surface, NULL);
+    SDL_FreeSurface(text_surface);
+    text_surface = text_bg_surface;
+  }
+
+  return text_surface;
 }
 
 void menu_move_selection(int increment, int cycle) {
@@ -385,12 +400,12 @@ void render() {
 
   int menu_index = 0;
 
-  int counter = 0;
   for (int i = 0; i < menu_max_items; i++) {
-    counter++;
-    menu_index = visible_menu_start + i;
-    if (menu_items.lines[menu_index] == NULL)
+    if ((visible_menu_start + i) == visible_menu_end) {
       break;
+    }
+
+    menu_index = visible_menu_start + i;
 
     char text[255];
     if (config.prefix_with_number) {

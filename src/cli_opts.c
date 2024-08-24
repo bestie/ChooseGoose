@@ -29,7 +29,6 @@ void config_set_defaults(Config *config) {
   config->bottom_padding = 10;
   config->left_padding = 20;
   config->right_padding = 0;
-  config->text_selected_border_size = 0;
   config->start_at_nth = 1;
   config->hide_file_extensions = false;
   config->prefix_with_number = false;
@@ -88,7 +87,6 @@ void print_usage() {
   fprintf(stdout, "  --bottom-padding SIZE in px\n");
   fprintf(stdout, "  --left-padding SIZE in px\n");
   fprintf(stdout, "  --right-padding SIZE in px\n");
-  fprintf(stdout, "  --text-selected-border-size SIZE in px\n");
   fprintf(stdout, "  --start-at-nth N \t\t list item to start menu from, default 1 (first), set 0 for no initial selection\n");
   fprintf(stdout,
           "  --hide-file-extensions true|false \t\t when using files as input "
@@ -121,7 +119,7 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       {"bottom-padding", required_argument, 0, 0},
       {"left-padding", required_argument, 0, 0},
       {"right-padding", required_argument, 0, 0},
-      {"text-selected-border-size", required_argument, 0, 0},
+      {"text-selected-background-color", required_argument, 0, 0},
       {"start-at-nth", required_argument, 0, 0},
       {"hide-file-extensions", required_argument, 0, 0},
       {"prefix-with-number", required_argument, 0, 0},
@@ -178,7 +176,7 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       config->right_padding = strtol(optarg, NULL, 10);
       break;
     case 12:
-      config->text_selected_border_size = strtol(optarg, NULL, 10);
+      config->text_selected_background_color = parse_color_from_hex(optarg);
       break;
     case 13:
       config->start_at_nth = strtol(optarg, NULL, 10);

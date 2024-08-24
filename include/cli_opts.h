@@ -19,7 +19,6 @@ typedef struct {
   int bottom_padding;
   int left_padding;
   int right_padding;
-  int text_selected_border_size;
   int start_at_nth;
   int logging_enabled;
   char log_filepath[255];
@@ -28,6 +27,7 @@ typedef struct {
   Color background_color;
   Color text_color;
   Color text_selected_color;
+  Color text_selected_background_color;
   int title_font_size;
 } Config;
 
