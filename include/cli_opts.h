@@ -28,6 +28,7 @@ typedef struct {
   Color background_color;
   Color text_color;
   Color text_selected_color;
+  int title_font_size;
 } Config;
 
 void config_set_defaults(Config *config);

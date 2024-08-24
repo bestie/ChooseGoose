@@ -31,6 +31,8 @@
 
 SDL_Surface *screen;
 SDL_Surface *background_image;
+SDL_Surface *title;
+TTF_Font *title_font = NULL;
 TTF_Font *font = NULL;
 SDL_Joystick *joystick = NULL;
 
@@ -47,6 +49,7 @@ Uint32 background_color;
 Config config;
 
 FILE *log_file;
+int title_height;
 int menu_item_height;
 int menu_height;
 int menu_max_items;
@@ -64,17 +67,11 @@ void terminate_at_file_extension(char *filename) {
 
 void set_log_target() {
   if (config.logging_enabled) {
-    fprintf(stderr, "Logging enabled\n");
     if (strlen(config.log_filepath) > 0) {
-      fprintf(stderr, "Logging to file `%s`\n", config.log_filepath);
       log_file = fopen(config.log_filepath, "a");
-      fprintf(stderr, "File pointer = %p\n", log_file);
     }
     if (!log_file) {
       log_file = stderr;
-      fprintf(log_file,
-              "Unable to open log file, falling back to stderr `%s`\n",
-              config.log_filepath);
     }
   }
 }
@@ -83,11 +80,10 @@ void log_event(const char *format, ...) {
   if (!log_file) {
     return;
   }
-  fprintf(stderr, "logging event to %p\n", log_file);
+
 
   FILE *output = log_file;
   char message[255];
-
   time_t current_time;
   struct tm *time_data;
   char time_buffer[20];
@@ -138,24 +134,31 @@ BunchOfLines read_lines_from_stdin() {
   return bunch;
 }
 
+TTF_Font* load_font(char *font_filepath, int font_size) {
+  if (strlen(font_filepath) > 1 && access(font_filepath, R_OK) != -1) {
+    log_event("Font loading from %s", font_filepath);
+    return TTF_OpenFont(font_filepath, font_size);
+  } else {
+    log_event("Font file not set or not readable `%s`", font_filepath);
+    SDL_RWops *rw = SDL_RWFromMem(default_font, default_font_len);
+    return TTF_OpenFontRW(rw, 1, font_size);
+  }
+}
+
 void initSDL() {
   log_event("SDL initialization started.");
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
   SDL_ShowCursor(SDL_DISABLE);
-  if (strlen(config.font_filepath) > 1 &&
-      access(config.font_filepath, R_OK) != -1) {
-    log_event("Font loading from %s", config.font_filepath);
-    font = TTF_OpenFont(config.font_filepath, config.font_size);
-  } else {
-    log_event("Font file not set or not readable `%s`", config.font_filepath);
-    SDL_RWops *rw = SDL_RWFromMem(default_font, default_font_len);
-    font = TTF_OpenFontRW(rw, 1, config.font_size);
-  }
+
+  title_font = load_font(config.font_filepath, config.title_font_size);
+  font = load_font(config.font_filepath, config.font_size);
+
   font_pixel_height = TTF_FontHeight(font);
+  int title_font_pixel_height = TTF_FontHeight(font);
+
   log_event("Font loaded size=%d, font_height=%dpx", config.font_size,
             font_pixel_height);
-
   log_event("SDL_SetVideoMode(SCREEN_WIDTH=%d, SCREEN_HEIGHT=%d, bpp=%d)",
             config.screen_width, config.screen_height, config.bits_per_pixel);
 
@@ -172,6 +175,9 @@ void cleanup() {
   if (joystick) {
     SDL_JoystickClose(joystick);
   }
+  if (title_font) {
+    TTF_CloseFont(title_font);
+  }
   if (font) {
     TTF_CloseFont(font);
   }
@@ -187,7 +193,7 @@ void quit(int exit_code) {
   exit(exit_code);
 }
 
-SDL_Surface *create_text_surface(char *text, Color color) {
+SDL_Surface *create_text_surface(char *text, Color color, TTF_Font *font) {
   SDL_Color text_color = {color.r, color.g, color.b};
 
   SDL_Surface *text_surface = TTF_RenderText_Blended(font, text, text_color);
@@ -202,7 +208,7 @@ SDL_Surface *create_menu_item(char *text, int selected) {
     color = config.text_color;
   }
 
-  return create_text_surface(text, color);
+  return create_text_surface(text, color, font);
 }
 
 void menu_move_selection(int increment, int cycle) {
@@ -330,27 +336,26 @@ int handleInput(SDL_Event event) {
   return event_handled;
 }
 
+void set_title() {
+  if (strlen(config.title)) {
+    title = create_text_surface(config.title, config.text_color, title_font);
+    title_height = title->h + MENU_ITEM_PADDING * 2;
+  } else {
+    title_height = 0;
+  }
+}
+
 void render() {
   SDL_FillRect(screen, NULL, background_color);
   if (background_image) {
     SDL_BlitSurface(background_image, NULL, screen, NULL);
   }
-
-  int menu_y_offset = config.top_padding;
-
-  if (strlen(config.title)) {
-    int header_padding = (config.top_padding / 2) + MENU_ITEM_PADDING;
-
-    SDL_Surface *title_surface =
-        create_text_surface(config.title, config.text_color);
-    SDL_Rect dest = {config.left_padding, header_padding, config.screen_width,
-                     menu_item_height};
-    SDL_BlitSurface(title_surface, NULL, screen, &dest);
-
-    menu_height -= title_surface->h;
-    menu_y_offset += title_surface->h;
-    SDL_FreeSurface(title_surface);
+  if (title) {
+    SDL_Rect dest = {config.left_padding, config.top_padding, 0, 0};
+    SDL_BlitSurface(title, NULL, screen, &dest);
   }
+
+  int menu_y_offset = config.top_padding + title_height;
 
   int default_items_above = menu_max_items / 2;
   int default_items_below = menu_max_items - default_items_above - 1;
@@ -402,7 +407,7 @@ void render() {
     SDL_Rect dest;
     dest.x = config.left_padding;
     dest.y = menu_y_offset + i * menu_item_height;
-    dest.w = config.screen_width;
+    dest.w = 0;
     dest.h = 0;
 
     SDL_Surface *menu_item = create_menu_item(text, selected_state);
@@ -414,7 +419,7 @@ void render() {
 }
 
 void set_background_image() {
-  fprintf(stderr, "Background image file path is `%s`\n",
+  log_event("Background image file path is `%s`\n",
           config.background_image_filepath);
   if (strcmp(config.background_image_filepath, "none") == 0) {
     return;
@@ -422,11 +427,11 @@ void set_background_image() {
 
   if (strlen(config.background_image_filepath) &&
       access(config.background_image_filepath, R_OK) != -1) {
-    fprintf(stderr, "Loading background image `%s`\n",
+    log_event("Loading background image `%s`\n",
             config.background_image_filepath);
     background_image = IMG_Load(config.background_image_filepath);
   } else {
-    fprintf(stderr, "No background image using default\n");
+    log_event("No background image using default\n");
     SDL_RWops *rw =
         SDL_RWFromMem(default_background_image, default_background_image_len);
     background_image = IMG_Load_RW(rw, 1);
@@ -435,6 +440,7 @@ void set_background_image() {
 
 void first_render() {
   set_background_image();
+  set_title();
 
   background_color =
       SDL_MapRGB(screen->format, config.background_color.r,
@@ -442,16 +448,20 @@ void first_render() {
 
   menu_item_height = font_pixel_height + MENU_ITEM_PADDING;
   menu_height =
-      config.screen_height - (config.top_padding + config.bottom_padding);
+      config.screen_height - (config.top_padding + config.bottom_padding + title_height);
   menu_max_items = menu_height / menu_item_height;
 
-  log_event("menu height = %d, menu_max_itemis=%d", menu_height,
-            menu_max_items);
+  log_event("top padding= %d", config.top_padding);
+  log_event("bottom padding= %d", config.bottom_padding);
+  log_event("menu height = %d", menu_height);
+  log_event("menu_item_height = %d",  menu_item_height);
+  log_event("max_menu_items = %d",  menu_max_items);
+
   render();
 }
 
 void signal_handler(int signal_number) {
-  printf("Caught signal %d\n", signal_number);
+  fprintf(stderr, "Caught signal %d\n", signal_number);
   if (signal_number == 2 || signal_number == 15) {
     quit(signal_number);
   }
@@ -464,7 +474,6 @@ int main(int argc, char **argv) {
   config_set_defaults(&config);
   parse_command_line_options(argc, argv, &config);
   set_log_target();
-  fprintf(stderr, "Log file = `%s`", config.log_filepath);
 
   log_event("HONK HONK");
   log_event("Setting starting selection to %d", config.start_at_nth - 1);
@@ -485,7 +494,7 @@ int main(int argc, char **argv) {
   log_event("SDL starting");
   initSDL();
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
-    fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
+    log_event("Unable to init SDL: %s\n", SDL_GetError());
     quit(1);
   }
 

@@ -23,17 +23,16 @@ void config_set_defaults(Config *config) {
   config->screen_height = 480;
   config->bits_per_pixel = 32;
   strcpy(config->title, "");
+  config->title_font_size = 21;
   config->font_size = 18;
-  config->top_padding = 30;
-  config->bottom_padding = 30;
+  config->top_padding = 10;
+  config->bottom_padding = 10;
   config->left_padding = 20;
   config->right_padding = 0;
   config->text_selected_border_size = 0;
   config->start_at_nth = 1;
   config->hide_file_extensions = false;
   config->prefix_with_number = false;
-  config->logging_enabled = true;
-  strcpy(config->log_filepath, "honk.log");
   config->background_color = parse_color_from_hex("00FFFF");
   config->text_color = parse_color_from_hex("000000");
   config->text_selected_color = parse_color_from_hex("FF0000");
@@ -84,6 +83,7 @@ void print_usage() {
   fprintf(stdout, "  --font FILEPATH \t\t path to true type font file\n");
   fprintf(stdout, "  --background-image FILEPATH \t\t path to PNG image\n");
   fprintf(stdout, "  --font-size SIZE in px\n");
+  fprintf(stdout, "  --title-font-size SIZE in px\n");
   fprintf(stdout, "  --top-padding SIZE in px\n");
   fprintf(stdout, "  --bottom-padding SIZE in px\n");
   fprintf(stdout, "  --left-padding SIZE in px\n");
@@ -128,6 +128,8 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       {"background-color", required_argument, 0, 0},
       {"text-color", required_argument, 0, 0},
       {"text-selected-color", required_argument, 0, 0},
+      {"title-font-size", required_argument, 0, 0},
+      {"log-file", required_argument, 0, 0},
       {0, 0, 0, 0}};
 
   int option_index = 0;
@@ -135,6 +137,8 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
     int c = getopt_long(argc, argv, "", long_options, &option_index);
     if (c == -1)
       break;
+
+    fprintf(stderr, "option_index %d - `%s`\n", option_index, optarg);
 
     switch (option_index) {
     case 0:
@@ -162,10 +166,10 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       config->font_size = strtol(optarg, NULL, 10);
       break;
     case 8:
-      config->top_padding = strtol(optarg, NULL, 20);
+      config->top_padding = strtol(optarg, NULL, 10);
       break;
     case 9:
-      config->bottom_padding = strtol(optarg, NULL, 60);
+      config->bottom_padding = strtol(optarg, NULL, 10);
       break;
     case 10:
       config->left_padding = strtol(optarg, NULL, 10);
@@ -180,6 +184,7 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       config->start_at_nth = strtol(optarg, NULL, 10);
       break;
     case 14:
+      fprintf(stderr, "hide_file_extensions");
       config->hide_file_extensions = parsebool(optarg);
       break;
     case 15:
@@ -193,6 +198,12 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       break;
     case 18:
       config->text_selected_color = parse_color_from_hex(optarg);
+      break;
+    case 19:
+      config->title_font_size = strtol(optarg, NULL, 10);
+      break;
+    case 20:
+      strncpy(config->log_filepath, optarg, 255);
       break;
     default:
       print_usage();
