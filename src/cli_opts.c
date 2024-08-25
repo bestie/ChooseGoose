@@ -11,6 +11,11 @@ static Color parse_color_from_hex(const char *hex) {
   return color;
 }
 
+static Color no_color() {
+  Color c = { -1, -1, -1 };
+  return c;
+}
+
 static bool parsebool(char *string) {
   if (strcmp(string, "true") == 0) {
     return true;
@@ -35,6 +40,7 @@ void config_set_defaults(Config *config) {
   config->background_color = parse_color_from_hex("00FFFF");
   config->text_color = parse_color_from_hex("000000");
   config->text_selected_color = parse_color_from_hex("FF0000");
+  config->text_selected_background_color = no_color();
   config->user_inactivity_timeout_ms = false;
 }
 

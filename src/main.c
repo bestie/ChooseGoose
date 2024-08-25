@@ -218,7 +218,7 @@ SDL_Surface *create_menu_item(char *text, int selected) {
 
   SDL_Surface *text_surface = create_text_surface(text, text_color, font);
 
-  if (selected && config.text_selected_background_color.r != NULL) {
+  if (selected && config.text_selected_background_color.r > -1) {
     Color bg = config.text_selected_background_color;
     Uint32 sdl_bg_color = SDL_MapRGB(screen->format, bg.r, bg.g, bg.b);
     int menu_item_width = config.screen_width;
