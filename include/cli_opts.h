@@ -20,7 +20,6 @@ typedef struct {
   int left_padding;
   int right_padding;
   int start_at_nth;
-  int logging_enabled;
   char log_filepath[255];
   int hide_file_extensions;
   int prefix_with_number;

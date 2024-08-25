@@ -66,13 +66,16 @@ void terminate_at_file_extension(char *filename) {
 }
 
 void set_log_target() {
-  if (config.logging_enabled) {
-    if (strlen(config.log_filepath) > 0) {
-      log_file = fopen(config.log_filepath, "a");
-    }
-    if (!log_file) {
-      log_file = stderr;
-    }
+  if (strlen(config.log_filepath) == 0) {
+    return;
+  }
+
+  if (strcmp(config.log_filepath, "stderr") == 0) {
+    log_file = stderr;
+  } else if (strcmp(config.log_filepath, "stdout") == 0) {
+    log_file = stdout;
+  } else {
+    log_file = fopen(config.log_filepath, "a");
   }
 }
 
@@ -80,7 +83,6 @@ void log_event(const char *format, ...) {
   if (!log_file) {
     return;
   }
-
 
   FILE *output = log_file;
   char message[255];
