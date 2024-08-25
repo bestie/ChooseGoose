@@ -192,6 +192,12 @@ void quit(int exit_code) {
   exit(exit_code);
 }
 
+void timeout() {
+  log_event("Inactivity timeout reached - %ds", config.user_inactivity_timeout_ms / 1000);
+  cleanup();
+  exit(124);
+}
+
 SDL_Surface *create_text_surface(char *text, Color color, TTF_Font *font) {
   SDL_Color text_color = {color.r, color.g, color.b};
 
@@ -543,16 +549,21 @@ int main(int argc, char **argv) {
       }
     }
 
-    // No user input - do button repeat
+    time_since_last_event = SDL_GetTicks() - last_event_at;
+
     if (!poll_result && button_repeat_active) {
-      time_since_last_event = SDL_GetTicks() - last_event_at;
+      fprintf(stderr, "no  poll result");
       time_since_last_repeat = SDL_GetTicks() - last_repeat_at;
 
       if (time_since_last_event > BUTTON_REPEAT_DELAY_MS &&
           time_since_last_repeat > BUTTON_REPEAT_INTERVAL) {
-        handleInput(event); // repeat the input event
+        handleInput(event);
         render();
       }
+    }
+
+    if (config.user_inactivity_timeout_ms && !poll_result && time_since_last_event > config.user_inactivity_timeout_ms) {
+      timeout();
     }
   }
 

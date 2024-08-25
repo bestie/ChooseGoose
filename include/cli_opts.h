@@ -29,6 +29,7 @@ typedef struct {
   Color text_selected_color;
   Color text_selected_background_color;
   int title_font_size;
+  int user_inactivity_timeout_ms;
 } Config;
 
 void config_set_defaults(Config *config);

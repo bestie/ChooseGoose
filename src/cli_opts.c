@@ -35,6 +35,7 @@ void config_set_defaults(Config *config) {
   config->background_color = parse_color_from_hex("00FFFF");
   config->text_color = parse_color_from_hex("000000");
   config->text_selected_color = parse_color_from_hex("FF0000");
+  config->user_inactivity_timeout_ms = false;
 }
 
 void print_usage() {
@@ -128,6 +129,7 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       {"text-selected-color", required_argument, 0, 0},
       {"title-font-size", required_argument, 0, 0},
       {"log-file", required_argument, 0, 0},
+      {"user-inactivity-timeout-ms", required_argument, 0, 0},
       {0, 0, 0, 0}};
 
   int option_index = 0;
@@ -202,6 +204,9 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       break;
     case 20:
       strncpy(config->log_filepath, optarg, 255);
+      break;
+    case 21:
+      config->user_inactivity_timeout_ms = strtol(optarg, NULL, 10);
       break;
     default:
       print_usage();
