@@ -47,9 +47,7 @@ void config_set_defaults(Config *config) {
 }
 
 void print_usage() {
-  fprintf(stdout,
-          "ChooseGoose is a silly interactive graphical menu program originally "
-          "created for the Anbernic RG35XX handheld gaming system.\n");
+  fprintf(stdout, "ChooseGoose is a silly interactive graphical menu program for shell scripters.\n");
   fprintf(stdout, "\n");
   fprintf(stdout, "Given an input list of new-line separated items on stdin, "
                   "it will render a silly interactive menu and allow the user "
@@ -57,22 +55,21 @@ void print_usage() {
   fprintf(stdout, "The selection is then written to standard out.\n");
   fprintf(stdout, "\n");
   fprintf(stdout, "Keybindings:\n");
-  fprintf(stdout, "  Up/Down arrow keys, menu up/down\n");
-  fprintf(stdout, "  Left/Right arrow keys: \t\t  page up/down\n");
-  fprintf(stdout, "  Enter: \t\t confirm selection\n");
-  fprintf(stdout, "  Esc: \t\t exit(0) with no selection\n");
+  fprintf(stdout, "  Up/Down arrow:   keys, menu up/down\n");
+  fprintf(stdout, "  Left arrow:      page up\n");
+  fprintf(stdout, "  Right arrow:     page down\n");
+  fprintf(stdout, "  Enter:           confirm selection\n");
+  fprintf(stdout, "  Esc:             exit(0) with no selection\n");
   fprintf(stdout, "\n");
   fprintf(stdout, "Joypad button bindings:\n");
-  fprintf(stdout, "  Up/Down: \t\t menu up/down\n");
-  fprintf(stdout, "  Left/Right \t\t page up/down\n");
-  fprintf(stdout, "  Start: \t\t confirm selection\n");
-  fprintf(stdout, "  Menu: \t\t exit(0) with no selection\n");
-  fprintf(stdout, "  A: \t\t confirm selection\n");
-  fprintf(stdout, "  B: \t\t exit(0) with no selection\n");
-  fprintf(stdout, "\n");
+  fprintf(stdout, "  Up/Down:         menu up/down\n");
+  fprintf(stdout, "  Left/Right       page up/down\n");
+  fprintf(stdout, "  Start:           confirm selection\n");
+  fprintf(stdout, "  Menu:            exit(0) with no selection\n");
+  fprintf(stdout, "  A:               confirm selection\n");
+  fprintf(stdout, "  B:               exit(0) with no selection\n");
   fprintf(stdout, "\n");
   fprintf(stdout, "Examples:\n");
-  fprintf(stdout, "\n");
   fprintf(stdout, "  Play a video file from the current directory\n");
   fprintf(stdout, "    ls -1 *.mp4 | choosegoose --background-color=000000 | xargs vlc --fullscreen \n");
   fprintf(stdout, "\n");
@@ -86,38 +83,40 @@ void print_usage() {
   fprintf(stdout, "Usage: choosegoose --option=value\n");
   fprintf(stdout, "\n");
   fprintf(stdout, "Options:\n");
-  fprintf(stdout, "  --help                                   Display this message.\n");
-  fprintf(stdout, "  --screen-width=N px                      Default 640.\n");
-  fprintf(stdout, "  --screen-height=N px                     Default 480.\n");
-  fprintf(stdout, "  --bits-per-pixel=N                       Default 32.\n");
+  fprintf(stdout, "  --help                                   In pixels. Display this message.\n");
+  fprintf(stdout, "  --screen-width=N                         In pixels. Default 640.\n");
+  fprintf(stdout, "  --screen-height=N                        In pixels. Default 480.\n");
+  fprintf(stdout, "  --bits-per-pixel=N                       In pixels. Default 32.\n");
   fprintf(stdout, "  --title=TITLE                            Title text appears with extra padding and can have a different font size.\n");
   fprintf(stdout, "  --font=FILEPATH                          Path to a custom true type font file used for all text.\n");
   fprintf(stdout, "  --background-image=FILEPATH|DEFAULT      Path to a PNG image or DEFAULT for the built-in goose.\n");
-  fprintf(stdout, "  --font-size=N px\n");
-  fprintf(stdout, "  --title-font-size=N px\n");
-  fprintf(stdout, "  --top-padding=N px\n");
-  fprintf(stdout, "  --bottom-padding=N px\n");
-  fprintf(stdout, "  --left-padding=N px\n");
-  fprintf(stdout, "  --right-padding=N px\n");
-  fprintf(stdout, "  --start-at-nth=N                         List item to start menu from, default 1 (first), set to 0 for no initial selection.\n");
+  fprintf(stdout, "  --font-size=N                            In pixels.\n");
+  fprintf(stdout, "  --title-font-size=N                      In pixels.\n");
+  fprintf(stdout, "  --top-padding=N                          In pixels.\n");
+  fprintf(stdout, "  --bottom-padding=N                       In pixels.\n");
+  fprintf(stdout, "  --left-padding=N                         In pixels.\n");
+  fprintf(stdout, "  --right-padding=N                        In pixels.\n");
+  fprintf(stdout, "  --start-at-nth=N                         List item to start menu from; default 1 (first), set to 0 for no initial selection.\n");
   fprintf(stdout, "  --user-inactivity-timeout-ms=N           Quits after N milliseconds if the user has not made an input. Exits with status 124 like GNU timeout.\n");
   fprintf(stdout, "  --hide-file-extensions=true|false        When using files as input and output, extensions can be hidden from the user.\n");
   fprintf(stdout, "  --prefix-with-number=true|false          Menu items are prepended with their list order number starting at 1.\n");
-  fprintf(stdout, "  --background-color=RRGGBB                Background color, visible when no background image set and through transparent PNG regions.\n");
-  fprintf(stdout, "  --text-color=RRGGBB \n");
+  fprintf(stdout, "  --background-color=RRGGBB                Visible when no background image is set and through transparent PNG regions.\n");
+  fprintf(stdout, "  --text-color=RRGGBB                      \n");
   fprintf(stdout, "  --text-selected-color=RRGGBB             A different color for the selected item text.\n");
   fprintf(stdout, "  --text-selected-background-color=RRGGBB  A solid background color for the selected item text.\n");
   fprintf(stdout, "  --log-file=FILEPATH|stderr|stdout        Log debug events to a file, stderr or stdout, though stdout is probably not a good idea.\n");
   fprintf(stdout, "\n");
+  fprintf(stdout, "  Colors are CSS-style, 6 digit hexadecimal but without the leading '#' character\n");
+  fprintf(stdout, "  --background-color=000000 for a black background\n");
   fprintf(stdout, "\n");
-  fprintf(stdout, "Author:\tStephen Best\n");
-  fprintf(stdout, "Project:\thttps://github.com/bestie/ChooseGoose\n");
+  fprintf(stdout, "Author:  Stephen Best\n");
+  fprintf(stdout, "Project: https://github.com/bestie/ChooseGoose\n");
   fprintf(stdout, "\n");
 }
 
 void parse_command_line_options(int argc, char **argv, Config *config) {
   static struct option long_options[] = {
-      {"help", required_argument, 0, 0},
+      {"help", no_argument, 0, 0},
       {"screen-width", required_argument, 0, 0},
       {"screen-height", required_argument, 0, 0},
       {"bits-per-pixel", required_argument, 0, 0},
@@ -148,10 +147,7 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
   }
 
   int option_index = 0;
-  while (1) {
-    int c = getopt_long(argc, argv, "", long_options, &option_index);
-    if (c == -1)
-      break;
+  while (getopt_long(argc, argv, "", long_options, &option_index) != -1) {
 
     if (debug) {
       fprintf(stderr, "ChooseGoose DEBUG option_index: `%d` name: `%s` value: `%s`\n", option_index, long_options[option_index].name, optarg);
