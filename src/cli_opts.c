@@ -76,34 +76,26 @@ void print_usage() {
   fprintf(stdout, "\n");
   fprintf(stdout, "Options:\n");
   fprintf(stdout, "  --help \t\t display this message\n");
-  fprintf(stdout, "  --screen-width SIZE in px \t\tdefault 640\n");
-  fprintf(stdout, "  --screen-height SIZE in px \t\tdefault 480\n");
+  fprintf(stdout, "  --screen-width N px \t\tdefault 640\n");
+  fprintf(stdout, "  --screen-height N px\t\tdefault 480\n");
   fprintf(stdout, "  --bits-per-pixel N \t\tdefault 32\n");
-  fprintf(stdout, "  --title TITLE\n");
-  fprintf(stdout, "  --font FILEPATH \t\t path to true type font file\n");
+  fprintf(stdout, "  --title TITLE \t\t title text appears with extra padding and can have a different font size");
+  fprintf(stdout, "  --font FILEPATH \t\t path to a custom true type font file used for all text\n");
   fprintf(stdout, "  --background-image FILEPATH \t\t path to PNG image\n");
-  fprintf(stdout, "  --font-size SIZE in px\n");
-  fprintf(stdout, "  --title-font-size SIZE in px\n");
-  fprintf(stdout, "  --top-padding SIZE in px\n");
-  fprintf(stdout, "  --bottom-padding SIZE in px\n");
-  fprintf(stdout, "  --left-padding SIZE in px\n");
-  fprintf(stdout, "  --right-padding SIZE in px\n");
-  fprintf(stdout, "  --start-at-nth N \t\t list item to start menu from, default 1 (first), set 0 for no initial selection\n");
-  fprintf(stdout,
-          "  --hide-file-extensions true|false \t\t when using files as input "
-          "and output, extensions can be hidden from the user\n");
-  fprintf(stdout, "  --prefix-with-number true|false \t\t \n");
-  fprintf(
-      stdout,
-      "  --background-color RRGGBB (CSS style hex color without leading #)\n");
-  fprintf(stdout,
-          "  --text-color RRGGBB (CSS style hex color without leading #)\n");
-  fprintf(stdout, "  --text-selected-color RRGGBB (CSS style hex color without "
-                  "leading #)\n");
-  fprintf(stdout, "  --text-selected-background-color RRGGBB (CSS style hex "
-                  "color without leading #)\n");
-  fprintf(stdout, "  --text-selected-border-color RRGGBB (CSS style hex color "
-                  "without leading #)\n");
+  fprintf(stdout, "  --font-size N px\n");
+  fprintf(stdout, "  --title-font-size N px\n");
+  fprintf(stdout, "  --top-padding N px\n");
+  fprintf(stdout, "  --bottom-padding N px\n");
+  fprintf(stdout, "  --left-padding N px\n");
+  fprintf(stdout, "  --right-padding N px\n");
+  fprintf(stdout, "  --start-at-nth N \t\t default 1. List item to start menu from, default 1 (first), set 0 for no initial selection\n");
+  fprintf(stdout, "  --user-inactivity-timeout-ms N \t\t Quits after N milliseconds if the user has not made an input. Exits with status 124 like GNU timeout\n");
+  fprintf(stdout, "  --hide-file-extensions true|false \t\t when using files as input and output, extensions can be hidden from the user\n");
+  fprintf(stdout, "  --prefix-with-number true|false \t\t menu items are prepended with their list order number starting at 1\n");
+  fprintf(stdout, "  --background-color RRGGBB \t\t background color, visible when no background image set and through transparent PNG regions.\n");
+  fprintf(stdout, "  --text-color RRGGBB \n");
+  fprintf(stdout, "  --text-selected-color RRGGBB \t\t a different color for the selected item text.\n");
+  fprintf(stdout, "  --text-selected-background-color RRGGBB \t\t a solid background color for the selected item text.\n");
 }
 
 void parse_command_line_options(int argc, char **argv, Config *config) {
@@ -132,13 +124,21 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       {"user-inactivity-timeout-ms", required_argument, 0, 0},
       {0, 0, 0, 0}};
 
+  bool debug = false;
+  if (getenv("DEBUG") && strcmp(getenv("DEBUG"), "1") == 0) {
+    debug = true;
+    fprintf(stderr, "ChooseGoose DEBUG enabled, DEBUG env var is set to `1`");
+  }
+
   int option_index = 0;
   while (1) {
     int c = getopt_long(argc, argv, "", long_options, &option_index);
     if (c == -1)
       break;
 
-    fprintf(stderr, "option_index %d - `%s`\n", option_index, optarg);
+    if (debug) {
+      fprintf(stderr, "ChooseGoose DEBUG option_index: `%d` name: `%s` value: `%s`\n", option_index, long_options[option_index].name, optarg);
+    }
 
     switch (option_index) {
     case 0:
@@ -184,7 +184,6 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       config->start_at_nth = strtol(optarg, NULL, 10);
       break;
     case 14:
-      fprintf(stderr, "hide_file_extensions");
       config->hide_file_extensions = parsebool(optarg);
       break;
     case 15:

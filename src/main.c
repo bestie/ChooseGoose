@@ -483,7 +483,7 @@ void first_render() {
 
 void signal_handler(int signal_number) {
   fprintf(stderr, "Caught signal %d\n", signal_number);
-  if (signal_number == 2 || signal_number == 15) {
+  if (signal_number == SIGINT || signal_number == SIGTERM) {
     quit(signal_number);
   }
 }
@@ -552,7 +552,6 @@ int main(int argc, char **argv) {
     time_since_last_event = SDL_GetTicks() - last_event_at;
 
     if (!poll_result && button_repeat_active) {
-      fprintf(stderr, "no  poll result");
       time_since_last_repeat = SDL_GetTicks() - last_repeat_at;
 
       if (time_since_last_event > BUTTON_REPEAT_DELAY_MS &&
