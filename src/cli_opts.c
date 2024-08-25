@@ -29,6 +29,7 @@ void config_set_defaults(Config *config) {
   config->bits_per_pixel = 32;
   strcpy(config->title, "");
   config->title_font_size = 21;
+  strcpy(config->background_image_filepath, "");
   config->font_size = 18;
   config->top_padding = 10;
   config->bottom_padding = 10;

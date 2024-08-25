@@ -444,20 +444,18 @@ void render() {
 void set_background_image() {
   log_event("Background image file path is `%s`\n",
           config.background_image_filepath);
-  if (strcmp(config.background_image_filepath, "none") == 0) {
-    return;
-  }
-
-  if (strlen(config.background_image_filepath) &&
+  if (strlen(config.background_image_filepath) == 0) {
+    log_event("No background image");
+  } else if (strcmp(config.background_image_filepath, "DEFAULT") == 0) {
+    log_event("Using default background image\n");
+    SDL_RWops *rw =
+        SDL_RWFromMem(default_background_image, default_background_image_len);
+    background_image = IMG_Load_RW(rw, 1);
+  } else if (strlen(config.background_image_filepath) &&
       access(config.background_image_filepath, R_OK) != -1) {
     log_event("Loading background image `%s`\n",
             config.background_image_filepath);
     background_image = IMG_Load(config.background_image_filepath);
-  } else {
-    log_event("No background image using default\n");
-    SDL_RWops *rw =
-        SDL_RWFromMem(default_background_image, default_background_image_len);
-    background_image = IMG_Load_RW(rw, 1);
   }
 }
 
