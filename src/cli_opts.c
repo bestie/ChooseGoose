@@ -28,7 +28,7 @@ void config_set_defaults(Config *config) {
   config->screen_height = 480;
   config->bits_per_pixel = 32;
   strcpy(config->title, "");
-  config->title_font_size = 21;
+  strcpy(config->font_filepath, "");
   strcpy(config->background_image_filepath, "");
   config->font_size = 18;
   config->top_padding = 10;
@@ -42,6 +42,7 @@ void config_set_defaults(Config *config) {
   config->text_color = parse_color_from_hex("000000");
   config->text_selected_color = parse_color_from_hex("FF0000");
   config->text_selected_background_color = no_color();
+  config->title_font_size = 21;
   config->user_inactivity_timeout_ms = false;
 }
 
