@@ -187,7 +187,9 @@ void cleanup() {
   TTF_Quit();
   IMG_Quit();
   SDL_Quit();
-  fclose(log_file);
+  if(log_file != NULL) {
+    fclose(log_file);
+  }
 }
 
 void quit(int exit_code) {

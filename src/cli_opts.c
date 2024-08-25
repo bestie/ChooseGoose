@@ -30,7 +30,7 @@ void config_set_defaults(Config *config) {
   strcpy(config->title, "");
   strcpy(config->font_filepath, "");
   strcpy(config->background_image_filepath, "");
-  config->font_size = 18;
+  config->font_size = 22;
   config->top_padding = 10;
   config->bottom_padding = 10;
   config->left_padding = 20;
@@ -42,7 +42,7 @@ void config_set_defaults(Config *config) {
   config->text_color = parse_color_from_hex("000000");
   config->text_selected_color = parse_color_from_hex("FF0000");
   config->text_selected_background_color = no_color();
-  config->title_font_size = 21;
+  config->title_font_size = 28;
   config->user_inactivity_timeout_ms = false;
 }
 

@@ -126,13 +126,16 @@ docker_clean:
 ### RG35XX #####################################################################
 
 RG_APPS = /mnt/mmc/Roms/APPS
+RG_ROMS = /mnt/SDCARD/Roms
 RG_INSTALL_DIR = $(RG_APPS)/$(PROJECT_NAME)
 
 .PHONY: rg-install
 rg-install:
 	adb shell mkdir -p $(RG_INSTALL_DIR)
-	cp $(RG_EXECUTABLE) RG/ChooseGoose
-	adb push --sync build/RG/* $(RG_APPS)
+	cp -r RG35XX build/
+	cp $(RG_EXECUTABLE) build/RG35XX/demos/APPS/ChooseGoose/
+	adb push --sync build/RG35XX/demos/APPS/* $(RG_APPS)
+	adb push --sync build/RG35XX/demos/ROMS/* $(RG_ROMS)
 	adb shell ls -l $(RG_APPS)
 	adb shell ls -l $(RG_DESTINATION)
 

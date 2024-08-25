@@ -19,8 +19,15 @@ jobs:
     - name: Build the Docker image
       run: make all
 
-    - name: Upload build artifacts
+    - name: Upload Linux binaries
       uses: actions/upload-artifact@v3
       with:
-        name: build-artifacts
+        name: linux-binaries-${{ github.ref_name }}
         path: build/Linux*
+
+    - name: Upload RG35XX demos
+      uses: actions/upload-artifact@v3
+      with:
+        name: RG35XX-demos-${{ github.ref_name }}
+        path: build/RG35XX/demos
+

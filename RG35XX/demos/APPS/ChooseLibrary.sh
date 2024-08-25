@@ -33,22 +33,24 @@ CORE="/mnt/mmc/CFW/retroarch/.retroarch/cores/ffmpeg_libretro.so"
 CONTENT_DIR="/mnt/SDCARD/Roms/VIDEOS"
 # ChooseGoose options to re-use
 title="~~ Silly Video Library"
-goose_opts="--text-color 00CC00 --font-size 28 --hide-file-extensions 0 --top-padding 20 --bottom-padding 80"
+goose_opts="--title-font-size 28 --font-size 24 --text-color DD0000 --text-selected-color 00CC00 --hide-file-extensions true --top-padding 20"
+background_image="./assets/ChooseGooseVideoLibrary640x480.png"
 
-# Pick a line from the .choosegoose.txt which will be the TV Show we want
-tv_show=$(cat $CONTENT_DIR/.choosegoose.txt | ./choosegoose $goose_opts --title "$title: TV Shows ~~" --background-image ./assets/ChooseGooseVideoLibrary640x480.png)
-
-# Get the directory listing and filter for the name of the TV Show, remove the Imgs directory
+# List the TV Episodes, remove the season and episode numbers to create a list of shows
+tv_shows=$(ls $CONTENT_DIR | grep -v Imgs | sed -E 's/[^\w][sS][0-9]{2}[eE][0-9]{2}.*//' | uniq)
+# Select from the list of shows
+tv_show=$(echo "$tv_shows" | ./choosegoose --title "$title: TV Shows ~~" --background-image "$background_image" --text-selected-background-color DDDDDD $goose_opts)
+# Filter all episodes for just that show
 episodes=$(ls $CONTENT_DIR | grep -v Imgs | grep "$tv_show")
 
 # Easily hack in a GarlicOS-like Imgs directory
 background_image="$CONTENT_DIR/Imgs/$tv_show.png"
 # or
-# background_image=none
+# background_image=DEFAULT
 
-# Pipe that into ChooseGoose and get the selection
+# Choose an episode
 selection=$(echo "$episodes" | ./choosegoose --title "$title: Episodes ~~" --background-image "$background_image" $goose_opts)
 
-# Launch Retroarch
+# Launch Retroarch to play
 export HOME=$RETROARCH_DIR
 ${RETROARCH_DIR}/retroarch -L "${CORE}" "${CONTENT_DIR}/${selection}"
