@@ -122,7 +122,9 @@ BunchOfLines read_lines_from_stdin() {
   int lines_i = 0;
   while (lines_i < max_lines && fgets(lines[lines_i], max_line_length, stdin)) {
     lines[lines_i][strcspn(lines[lines_i], "\n")] = '\0';
-    lines_i++;
+    if(strlen(lines[lines_i]) > 0) {
+      lines_i++;
+    }
   }
 
   BunchOfLines bunch = {
@@ -268,7 +270,7 @@ void enable_repeat() {
 void disable_repeat() { button_repeat_active = 0; }
 
 void handle_dpad(SDL_JoyHatEvent event) {
-  // log_event("D-Pad movement: hat %d, value: %d", event.hat, event.value);
+  log_event("D-Pad movement: hat %d, value: %d", event.hat, event.value);
   switch (event.value) {
   case SDL_HAT_UP:
     menu_move_selection(-1, 1);
@@ -406,10 +408,13 @@ void render() {
     visible_menu_end = menu_items.count - 1;
   }
 
+  log_event("Rendering item range %d-%d", visible_menu_start, visible_menu_end);
+
   int menu_index = 0;
 
   for (int i = 0; i < menu_max_items; i++) {
-    if ((visible_menu_start + i) == visible_menu_end) {
+    if (visible_menu_end - visible_menu_end > i) {
+      log_event("Done rendering items %d", i);
       break;
     }
 
