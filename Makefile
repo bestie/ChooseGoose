@@ -22,7 +22,7 @@ LD ?= $(CROSS_COMPILE)ld
 AR ?= $(CROSS_COMPILE)ar
 AS ?= $(CROSS_COMPILE)as
 LDFLAGS = -L$(PREFIX)/lib -lSDL -lSDLmain -lSDL_image -lSDL_ttf $(MORE_LDS)
-CFLAGS = -g -Wall
+CFLAGS = -g -std=c11 -Wall -Wextra -Werror
 INCLUDES = -Iinclude -Ibuild -I$(PREFIX)/include
 
 PROJECT_NAME=ChooseGoose
@@ -41,7 +41,7 @@ SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 .PHONY: all
-all: docker-compile docker-compile-rg35xx
+all: compile_flags.txt docker-compile docker-compile-rg35xx
 
 .PHONY: goose
 goose: $(TARGET)
@@ -49,6 +49,11 @@ goose: $(TARGET)
 .PHONY: clean
 clean:
 	rm -rf build/*
+
+compile_flags.txt: Makefile
+	# split C_FLAGS into lines
+	echo $(CFLAGS) | tr ' ' '\n' > $@
+	echo $(INCLUDES) | tr ' ' '\n' >> $@
 
 ### Embedded background image #################################################
 
