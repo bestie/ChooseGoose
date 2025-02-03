@@ -114,21 +114,21 @@ RG_EXECUTABLE = build/Linux-arm-uclibcgnueabi/bin/choosegoose
 docker-build: $(BUILD_DIR) $(DOCKER_BUILD_CACHE_FILE)
 
 $(DOCKER_BUILD_CACHE_FILE): $(BUILD_DIR) Dockerfile Makefile $(SOURCES)
-	docker build --tag $(DOCKER_TAG) . && touch $(DOCKER_BUILD_CACHE_FILE)
+	docker build --platform linux/amd64 --tag $(DOCKER_TAG) . && touch $(DOCKER_BUILD_CACHE_FILE)
 
 .PHONY: docker-compile
 docker-compile: $(SOURCES) $(DOCKER_BUILD_CACHE_FILE)
-	docker run --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) make goose
+	docker run --platform linux/amd64 --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) make goose
 
 .PHONY: docker-compile-rg35xx
 docker-compile-rg35xx: $(SOURCES) $(DOCKER_BUILD_CACHE_FILE)
-	docker run --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) bash -c "source cross_compilation_env.sh && make goose"
+	docker run --platform linux/amd64 --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) bash -c "source cross_compilation_env.sh && make goose"
 	cp -r RG35XX build/
 	cp $(RG_EXECUTABLE) build/RG35XX/demos/APPS/ChooseGoose/
 
 .PHONY: docker-shell
 docker-shell: $(DOCKER_BUILD_CACHE_FILE)
-	docker run --rm --interactive --tty --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) /bin/bash
+	docker run --platform linux/amd64 --rm --interactive --tty --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) /bin/bash
 
 .PHONY: docker-clean
 docker_clean:
