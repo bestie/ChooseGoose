@@ -6,7 +6,13 @@ PREFIX ?= "/usr"
 BUILD_DIR = build/$(PLATFORM)-$(ARCH)-$(LIBC)
 
 ifeq ($(PLATFORM), Darwin)
-	PREFIX ?= /usr/local
+	# if /usr/local/include exists, otherwise check for /opt/homebrew/include
+	ifneq ("$(wildcard /usr/local/include)", "")
+		PREFIX = /usr/local
+	else
+		PREFIX = /opt/homebrew
+	endif
+
 	MORE_LDS = -framework CoreFoundation -framework Cocoa
 endif
 
