@@ -21,8 +21,8 @@ CXX ?= $(CROSS_COMPILE)g++
 LD ?= $(CROSS_COMPILE)ld
 AR ?= $(CROSS_COMPILE)ar
 AS ?= $(CROSS_COMPILE)as
-LDFLAGS ?= -L$(PREFIX)/lib -lSDL -lSDLmain -lSDL_image -lSDL_ttf $(MORE_LDS)
-CFLAGS = -g -Wall -lSDLmain -lSDL -lSDL_ttf -lSDL_image
+LDFLAGS = -L$(PREFIX)/lib -lSDL -lSDLmain -lSDL_image -lSDL_ttf $(MORE_LDS)
+CFLAGS = -g -Wall
 INCLUDES = -Iinclude -Ibuild -I$(PREFIX)/include
 
 PROJECT_NAME=ChooseGoose
