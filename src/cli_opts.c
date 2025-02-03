@@ -11,7 +11,7 @@ static Color parse_color_from_hex(const char *hex) {
   return color;
 }
 
-static Color no_color() {
+static Color no_color(void) {
   Color c = { -1, -1, -1 };
   return c;
 }
@@ -46,7 +46,7 @@ void config_set_defaults(Config *config) {
   config->user_inactivity_timeout_ms = false;
 }
 
-void print_usage() {
+void print_usage(void) {
   fprintf(stdout, "ChooseGoose is a silly interactive graphical menu program for shell scripters.\n");
   fprintf(stdout, "\n");
   fprintf(stdout, "Given an input list of new-line separated items on stdin, "
@@ -218,7 +218,7 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       strncpy(config->log_filepath, optarg, 255);
       break;
     case 21:
-      config->user_inactivity_timeout_ms = strtol(optarg, NULL, 10);
+      config->user_inactivity_timeout_ms = strtoul(optarg, NULL, 10);
       break;
     default:
       print_usage();

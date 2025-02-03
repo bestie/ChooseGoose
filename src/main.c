@@ -28,6 +28,7 @@
 #define BUTTON_MENU 9
 #define BUTTON_REPEAT_DELAY_MS 250
 #define BUTTON_REPEAT_INTERVAL 150
+#define SDL_UNUSED 0
 
 SDL_Surface *screen;
 SDL_Surface *background_image;
@@ -65,7 +66,7 @@ void terminate_at_file_extension(char *filename) {
   }
 }
 
-void set_log_target() {
+void set_log_target(void) {
   if (strlen(config.log_filepath) == 0) {
     return;
   }
@@ -105,7 +106,7 @@ void log_event(const char *format, ...) {
   fflush(output);
 }
 
-BunchOfLines read_lines_from_stdin() {
+BunchOfLines read_lines_from_stdin(void) {
   int max_lines = MAX_MENU_ITEMS;
   int max_line_length = MAX_LINE_LENGTH;
 
@@ -149,7 +150,7 @@ TTF_Font* load_font(char *font_filepath, int font_size) {
   }
 }
 
-void initSDL() {
+void initSDL(void) {
   log_event("SDL initialization started.");
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
@@ -172,7 +173,7 @@ void initSDL() {
   SDL_EnableKeyRepeat(400, 50);
 }
 
-void cleanup() {
+void cleanup(void) {
   SDL_FreeSurface(background_image);
   SDL_FreeSurface(screen);
   if (joystick) {
@@ -198,14 +199,14 @@ void quit(int exit_code) {
   exit(exit_code);
 }
 
-void timeout() {
+void timeout(void) {
   log_event("Inactivity timeout reached - %ds", config.user_inactivity_timeout_ms / 1000);
   cleanup();
   exit(124);
 }
 
 SDL_Surface *create_text_surface(char *text, Color color, TTF_Font *font) {
-  SDL_Color text_color = {color.r, color.g, color.b};
+  SDL_Color text_color = {color.r, color.g, color.b, SDL_UNUSED};
 
   SDL_Surface *text_surface = TTF_RenderText_Blended(font, text, text_color);
   return text_surface;
@@ -257,19 +258,19 @@ void menu_move_selection(int increment, int cycle) {
   log_event("Moved to from %d to %d", from, selected_index);
 }
 
-void menu_confirm() {
+void menu_confirm(void) {
   log_event("Selection confirmed item=%d/%d - `%s`", selected_index,
             menu_items.count, menu_items.lines[selected_index]);
   fprintf(stdout, "%s\n", menu_items.lines[selected_index]);
   quit(0);
 }
 
-void enable_repeat() {
+void enable_repeat(void) {
   button_repeat_active = 1;
   button_repeat_first = 1;
 }
 
-void disable_repeat() { button_repeat_active = 0; }
+void disable_repeat(void) { button_repeat_active = 0; }
 
 void handle_dpad(SDL_JoyHatEvent event) {
   log_event("D-Pad movement: hat %d, value: %d", event.hat, event.value);
@@ -363,7 +364,7 @@ int handleInput(SDL_Event event) {
   return event_handled;
 }
 
-void set_title() {
+void set_title(void) {
   if (strlen(config.title)) {
     title = create_text_surface(config.title, config.text_color, title_font);
     title_height = title->h + MENU_ITEM_PADDING * 2;
@@ -372,7 +373,7 @@ void set_title() {
   }
 }
 
-void render() {
+void render(void) {
   SDL_FillRect(screen, NULL, background_color);
   if (background_image) {
     SDL_BlitSurface(background_image, NULL, screen, NULL);
@@ -448,7 +449,7 @@ void render() {
   SDL_Flip(screen);
 }
 
-void set_background_image() {
+void set_background_image(void) {
   log_event("Background image file path is `%s`\n",
           config.background_image_filepath);
   if (strlen(config.background_image_filepath) == 0) {
@@ -466,7 +467,7 @@ void set_background_image() {
   }
 }
 
-void first_render() {
+void first_render(void) {
   set_background_image();
   set_title();
 
