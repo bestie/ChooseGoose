@@ -46,9 +46,14 @@ all: compile_flags.txt docker-compile docker-compile-rg35xx
 .PHONY: goose
 goose: $(TARGET)
 
+# Default clean task does not remove the font download because it's annoying
+# to download after every clean when it doesn't actaully change.
 .PHONY: clean
 clean:
-	rm -rf build/*
+	find build -mindepth 1 \
+		-not -path "$(FONT_DIR)" \
+		-not -path "$(FONT_DIR)/*" \
+		-exec rm -rf {} +
 
 compile_flags.txt: Makefile
 	# split C_FLAGS into lines
@@ -66,25 +71,31 @@ $(COMPILED_BG_IMAGE): $(BACKGROUND_IMAGE)
 
 ### Embedded font compilation ##################################################
 
-FONT_DOWNLOAD = build/dejavu-fonts-ttf-2.37.tar.bz2
-TTF_FONT_FILE = build/fonts/font.ttf
+FONT_DIR = build/font
+FONT_DOWNLOAD = $(FONT_DIR)/dejavu-fonts-ttf-2.37.tar.bz2
+# No file extension because xxd uses the full file name for the variable name
+# when it generates the C code to embed the file
+TTF_FONT_FILE = $(FONT_DIR)/default_font
 COMPILED_FONT = build/font.c
+
+.PHONY: clean-font
+clean-font:
+	rm -rf $(FONT_DIR) $(COMPILED_FONT)
 
 .PHONY: font
 font: $(COMPILED_FONT)
 
 $(COMPILED_FONT): $(TTF_FONT_FILE)
-	cd build/fonts && xxd -i default_font $(PROJECT_ROOT)/$@
+	cd $(FONT_DIR) && xxd -i $(notdir $(TTF_FONT_FILE)) > $(PROJECT_ROOT)/$@
 
 $(TTF_FONT_FILE): $(FONT_DOWNLOAD)
-	mkdir -p build/fonts
-	tar --directory build/fonts -xf $(FONT_DOWNLOAD)
-	cp build/fonts/dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono.ttf build/fonts/default_font
+	tar --directory $(FONT_DIR) -xf $(FONT_DOWNLOAD)
+	cp $(FONT_DIR)/dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono.ttf $(TTF_FONT_FILE)
 
 $(FONT_DOWNLOAD):
-	mkdir -p build
+	mkdir -p $(FONT_DIR)
 	wget https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2 \
-		--directory-prefix=build
+		--directory-prefix=$(FONT_DIR)
 
 ### Compile and link ##########################################################
 
