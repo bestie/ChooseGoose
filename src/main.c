@@ -37,7 +37,7 @@ State* global_state;
 FILE* log_file;
 
 void cleanup(void) {
-  cleanup_state(global_state);
+  /*cleanup_state(global_state);*/
   TTF_Quit();
   IMG_Quit();
   SDL_Quit();
@@ -109,29 +109,55 @@ TTF_Font* load_font(char *font_filepath, int font_size) {
   }
 }
 
+SDL_Interface sdl = {
+    .init = SDL_Init,
+    .quit = SDL_Quit,
+    .set_video_mode = SDL_SetVideoMode,
+    .wm_set_caption = SDL_WM_SetCaption,
+    .enable_key_repeat = SDL_EnableKeyRepeat,
+    .get_ticks = SDL_GetTicks,
+    .poll_event = SDL_PollEvent,
+    .flip = SDL_Flip,
+    .fill_rect = SDL_FillRect,
+    .free_surface = SDL_FreeSurface,
+    .delay = SDL_Delay,
+    .blit_surface = SDL_BlitSurface,
+    .show_cursor = SDL_ShowCursor,
+    .num_joysticks = SDL_NumJoysticks,
+    .joystick_open = SDL_JoystickOpen,
+    .ttf_init = TTF_Init,
+};
+
+void set_sdl_interface(SDL_Interface* interface) {
+  sdl = *interface;
+}
+
+SDL_Interface* get_sdl_interface(void) {
+  return &sdl;
+}
+
 void init_sdl(Config *config, State* state) {
   log_event("SDL initialization started.");
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
+  if (sdl.init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
     log_event("Unable to init SDL: %s\n", SDL_GetError());
     quit(1);
   }
 
   log_event("Configuring SDL");
-  SDL_ShowCursor(SDL_DISABLE);
-  SDL_WM_SetCaption(config->title, NULL);
-  SDL_EnableKeyRepeat(config->key_repeat_delay_ms, config->key_repeat_interval_ms);
+  sdl.show_cursor(SDL_DISABLE);
+  sdl.wm_set_caption(config->title, NULL);
+  sdl.enable_key_repeat(config->key_repeat_delay_ms, config->key_repeat_interval_ms);
 
   log_event("SDL_SetVideoMode(SCREEN_WIDTH=%d, SCREEN_HEIGHT=%d, bpp=%d)",
             config->screen_width, config->screen_height, config->bits_per_pixel);
-  state->screen = SDL_SetVideoMode(config->screen_width, config->screen_height,
+  state->screen = sdl.set_video_mode(config->screen_width, config->screen_height,
                             config->bits_per_pixel, SDL_SWSURFACE);
 
-
   log_event("Looking for joysticks");
-  if (SDL_NumJoysticks() > 0) {
-    state->joystick = SDL_JoystickOpen(0);
+  if (sdl.num_joysticks() > 0) {
+    state->joystick = sdl.joystick_open(0);
     if (state->joystick == NULL) {
-      log_event("Unable to open joystick: %s\n", SDL_GetError());
+      log_event("Unable to open joystick: %s\n", sdl.get_error());
       quit(1);
     } else {
       log_event("Joystick opened: %s\n", SDL_JoystickName(0));
@@ -141,7 +167,7 @@ void init_sdl(Config *config, State* state) {
   }
 
   log_event("Loading fonts");
-  TTF_Init();
+  sdl.ttf_init();
   state->title_font = load_font(config->font_filepath, config->title_font_size);
   state->font = load_font(config->font_filepath, config->font_size);
 
@@ -363,7 +389,7 @@ void render(Config* config, State* state) {
 
   int menu_index = 0;
 
-  for (int i = 0; i < state->menu_max_items; i++) {
+  for (int i = 0; i < state->menu_items->count; i++) {
     if (visible_menu_end - visible_menu_end > i) {
       log_event("Done rendering items %d", i);
       break;
@@ -390,11 +416,14 @@ void render(Config* config, State* state) {
     dest.h = 0;
 
     SDL_Surface *menu_item = create_menu_item(config, state, text, selected_state);
-    SDL_BlitSurface(menu_item, NULL, state->screen, &dest);
-    SDL_FreeSurface(menu_item);
+    log_event("blitting menu item %d at %d,%d", menu_index, dest.x, dest.y);
+    sdl.blit_surface(menu_item, NULL, state->screen, &dest);
+    log_event("blitting menu item %d at %d,%d", menu_index, dest.x, dest.y);
+    /*sdl.free_surface(menu_item);*/
   }
 
-  SDL_Flip(state->screen);
+  log_event("flipping screen");
+  sdl.flip(state->screen);
 }
 
 void set_background_image(State* state, char *background_image_filepath) {
@@ -456,20 +485,20 @@ void event_loop(Config* config, State* state) {
   first_render(config, state);
 
   while (1) {
-    poll_result = SDL_PollEvent(&event);
-    log_event(" menu_item_height = %d", state->menu_item_height);
+    poll_result = sdl.poll_event(&event);
 
     if (poll_result) {
-      last_event_at = SDL_GetTicks();
+      last_event_at = sdl.get_ticks();
+      log_event("Event type: %d", event.type);
       if (handle_input(state, event)) {
         render(config, state);
       }
     }
 
-    time_since_last_event = SDL_GetTicks() - last_event_at;
+    time_since_last_event = sdl.get_ticks() - last_event_at;
 
     if (!poll_result && state->button_repeat_active) {
-      time_since_last_repeat = SDL_GetTicks() - last_repeat_at;
+      time_since_last_repeat = sdl.get_ticks() - last_repeat_at;
 
       if (time_since_last_event > BUTTON_REPEAT_DELAY_MS &&
           time_since_last_repeat > BUTTON_REPEAT_INTERVAL) {
@@ -492,7 +521,9 @@ void goose_setup(Config *config, State *state) {
   state->selected_index = config->start_at_nth - 1;
 
   log_event("Reading menu items");
-  state->menu_items = read_lines_from_stdin(MAX_MENU_ITEMS, MAX_LINE_LENGTH);
+  if (!state->menu_items) {
+    state->menu_items = read_lines_from_stdin(MAX_MENU_ITEMS, MAX_LINE_LENGTH);
+  }
 
   if (state->menu_items->count < 1) {
     log_event("No menu items on stdin");

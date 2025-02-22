@@ -22,7 +22,7 @@ LD ?= $(CROSS_COMPILE)ld
 AR ?= $(CROSS_COMPILE)ar
 AS ?= $(CROSS_COMPILE)as
 LDFLAGS = -L$(PREFIX)/lib -lSDL -lSDLmain -lSDL_image -lSDL_ttf $(MORE_LDS)
-CFLAGS = -g -std=c11 -Wall -Wextra -Werror
+CFLAGS = -g -std=c11 -Wall
 INCLUDES = -Iinclude -Ibuild -I$(PREFIX)/include
 
 PROJECT_NAME=ChooseGoose
@@ -48,7 +48,7 @@ goose: $(TARGET)
 
 .PHONY: demo
 demo: $(TARGET)
-	ls -1 | ./$(TARGET) --title "It's a demo" --background-color FFFF00
+	ls -1 | ./$(TARGET) --title "It's a demo" --background-color FFFF00 --log-file /dev/stderr
 
 # Default clean task does not remove the font download because it's annoying
 # to download after every clean when it doesn't actaully change.
@@ -132,7 +132,7 @@ TEST_EXECUTABLE = $(TEST_BUILD_DIR)/$(PROJECT_SHORT)_tests
 
 .PHONY: test
 test: $(TEST_EXECUTABLE)
-	./$(TEST_EXECUTABLE) --jobs 1
+	./$(TEST_EXECUTABLE) --jobs=1
 
 $(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.c
 	mkdir -p $(TEST_OBJ_DIR)

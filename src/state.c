@@ -9,7 +9,6 @@ State* init_state() {
     state->title_height = 0;
 
     state->menu_height = 0;
-    state->menu_max_items = 0;
     state->font_pixel_height = 0;
     state->selected_index = 0;
     state->button_repeat_active = 0;
@@ -20,6 +19,7 @@ State* init_state() {
     state->title_font = NULL;
     state->font = NULL;
     state->joystick = NULL;
+    state->menu_items = NULL;
 
     return state;
 }
