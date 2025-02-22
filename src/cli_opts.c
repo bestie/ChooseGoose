@@ -105,6 +105,8 @@ void print_usage(void) {
   fprintf(stdout, "  --right-padding=N                        In pixels.\n");
   fprintf(stdout, "  --start-at-nth=N                         List item to start menu from; default 1 (first), set to 0 for no initial selection.\n");
   fprintf(stdout, "  --user-inactivity-timeout-ms=N           Quits after N milliseconds if the user has not made an input. Exits with status 124 like GNU timeout.\n");
+  fprintf(stdout, "  --key-repeat-delay-ms=N                  Delay in milliseconds before key repeat starts. See SDL_EnableKeyRepeat.\n");
+  fprintf(stdout, "  --key-repeat-interval-ms=N               Interval in milliseconds between key repeats. See SDL_EnableKeyRepeat.\n");
   fprintf(stdout, "  --hide-file-extensions=true|false        When using files as input and output, extensions can be hidden from the user.\n");
   fprintf(stdout, "  --prefix-with-number=true|false          Menu items are prepended with their list order number starting at 1.\n");
   fprintf(stdout, "  --background-color=RRGGBB                Visible when no background image is set and through transparent PNG regions.\n");
@@ -145,6 +147,8 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       {"title-font-size", required_argument, 0, 0},
       {"log-file", required_argument, 0, 0},
       {"user-inactivity-timeout-ms", required_argument, 0, 0},
+      {"key-repeat-delay-ms", required_argument, 0, 0},
+      {"key-repeat-interval-ms", required_argument, 0, 0},
       {0, 0, 0, 0}};
 
   bool debug = false;
@@ -226,6 +230,12 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       break;
     case 21:
       config->user_inactivity_timeout_ms = strtoul(optarg, NULL, 10);
+      break;
+    case 22:
+      config->key_repeat_delay_ms = strtoul(optarg, NULL, 10);
+      break;
+    case 23:
+      config->key_repeat_interval_ms = strtoul(optarg, NULL, 10);
       break;
     default:
       print_usage();
