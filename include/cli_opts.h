@@ -27,9 +27,11 @@ typedef struct {
   Color text_selected_background_color;
   unsigned int title_font_size;
   unsigned int user_inactivity_timeout_ms;
+  unsigned int key_repeat_delay_ms;
+  unsigned int key_repeat_interval_ms;
 } Config;
 
-void config_set_defaults(Config *config);
+Config* default_config(void);
 void print_usage(void);
 void parse_command_line_options(int argc, char **argv, Config *config);
 

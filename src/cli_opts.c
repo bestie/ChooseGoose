@@ -23,10 +23,13 @@ static bool parsebool(char *string) {
   return false;
 }
 
-void config_set_defaults(Config *config) {
+Config* default_config() {
+  Config* config = malloc(sizeof(Config));
+
   config->screen_width = 640;
   config->screen_height = 480;
   config->bits_per_pixel = 32;
+  strcpy(config->log_filepath, "");
   strcpy(config->title, "");
   strcpy(config->font_filepath, "");
   strcpy(config->background_image_filepath, "");
@@ -44,6 +47,10 @@ void config_set_defaults(Config *config) {
   config->text_selected_background_color = no_color();
   config->title_font_size = 28;
   config->user_inactivity_timeout_ms = false;
+  config->key_repeat_delay_ms = 400;
+  config->key_repeat_interval_ms = 50;
+
+  return config;
 }
 
 void print_usage(void) {
