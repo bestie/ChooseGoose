@@ -49,7 +49,6 @@ typedef struct {
 
 BunchOfLines menu_items;
 Uint32 background_color;
-Config config;
 
 FILE *log_file;
 int title_height;
@@ -68,17 +67,17 @@ void terminate_at_file_extension(char *filename) {
   }
 }
 
-void set_log_target(void) {
-  if (strlen(config.log_filepath) == 0) {
+void set_log_target(char log_filepath[]) {
+  if (strlen(log_filepath) == 0) {
     return;
   }
 
-  if (strcmp(config.log_filepath, "stderr") == 0) {
+  if (strcmp(log_filepath, "stderr") == 0) {
     log_file = stderr;
-  } else if (strcmp(config.log_filepath, "stdout") == 0) {
+  } else if (strcmp(log_filepath, "stdout") == 0) {
     log_file = stdout;
   } else {
-    log_file = fopen(config.log_filepath, "a");
+    log_file = fopen(log_filepath, "a");
   }
 }
 
@@ -152,7 +151,7 @@ TTF_Font* load_font(char *font_filepath, int font_size) {
   }
 }
 
-void initSDL(void) {
+void initSDL(Config config) {
   log_event("SDL initialization started.");
   if(SDL_Init(SDL_INIT_VIDEO) < 0) {
     log_event("SDL_Init failed: %s", SDL_GetError());
@@ -205,8 +204,8 @@ void quit(int exit_code) {
   exit(exit_code);
 }
 
-void timeout(void) {
-  log_event("Inactivity timeout reached - %ds", config.user_inactivity_timeout_ms / 1000);
+void timeout(int user_inactivity_timeout_ms) {
+  log_event("Inactivity timeout reached - %ds", user_inactivity_timeout_ms / 1000);
   cleanup();
   exit(124);
 }
@@ -218,7 +217,7 @@ SDL_Surface *create_text_surface(char *text, Color color, TTF_Font *font) {
   return text_surface;
 }
 
-SDL_Surface *create_menu_item(char *text, int selected) {
+SDL_Surface *create_menu_item(Config config, char *text, int selected) {
   Color text_color;
 
   if (selected) {
@@ -370,7 +369,7 @@ int handleInput(SDL_Event event) {
   return event_handled;
 }
 
-void set_title(void) {
+void set_title(Config config) {
   if (strlen(config.title)) {
     title = create_text_surface(config.title, config.text_color, title_font);
     title_height = title->h + MENU_ITEM_PADDING * 2;
@@ -379,7 +378,7 @@ void set_title(void) {
   }
 }
 
-void render(void) {
+void render(Config config) {
   SDL_FillRect(screen, NULL, background_color);
   if (background_image) {
     SDL_BlitSurface(background_image, NULL, screen, NULL);
@@ -447,7 +446,7 @@ void render(void) {
     dest.w = 0;
     dest.h = 0;
 
-    SDL_Surface *menu_item = create_menu_item(text, selected_state);
+    SDL_Surface *menu_item = create_menu_item(config, text, selected_state);
     SDL_BlitSurface(menu_item, NULL, screen, &dest);
     SDL_FreeSurface(menu_item);
   }
@@ -455,27 +454,27 @@ void render(void) {
   SDL_Flip(screen);
 }
 
-void set_background_image(void) {
+void set_background_image(char *background_image_filepath) {
   log_event("Background image file path is `%s`\n",
-          config.background_image_filepath);
-  if (strlen(config.background_image_filepath) == 0) {
+          background_image_filepath);
+  if (strlen(background_image_filepath) == 0) {
     log_event("No background image");
-  } else if (strcmp(config.background_image_filepath, "DEFAULT") == 0) {
+  } else if (strcmp(background_image_filepath, "DEFAULT") == 0) {
     log_event("Using default background image\n");
     SDL_RWops *rw =
         SDL_RWFromMem(default_background_image, default_background_image_len);
     background_image = IMG_Load_RW(rw, 1);
-  } else if (strlen(config.background_image_filepath) &&
-      access(config.background_image_filepath, R_OK) != -1) {
+  } else if (strlen(background_image_filepath) &&
+      access(background_image_filepath, R_OK) != -1) {
     log_event("Loading background image `%s`\n",
-            config.background_image_filepath);
-    background_image = IMG_Load(config.background_image_filepath);
+            background_image_filepath);
+    background_image = IMG_Load(background_image_filepath);
   }
 }
 
-void first_render(void) {
-  set_background_image();
-  set_title();
+void first_render(Config config) {
+  set_background_image(config.background_image_filepath);
+  set_title(config);
 
   background_color =
       SDL_MapRGB(screen->format, config.background_color.r,
@@ -492,7 +491,7 @@ void first_render(void) {
   log_event("menu_item_height = %d",  menu_item_height);
   log_event("max_menu_items = %d",  menu_max_items);
 
-  render();
+  render(config);
 }
 
 void signal_handler(int signal_number) {
@@ -502,22 +501,20 @@ void signal_handler(int signal_number) {
   }
 }
 
-int setup(int argc, char **argv) {
+Config setup(int argc, char **argv) {
+  Config config;
   config_set_defaults(&config);
   parse_command_line_options(argc, argv, &config);
-  set_log_target();
+  set_log_target(config.log_filepath);
 
-  return 0;
+  return config;
 }
 
 int main(int argc, char **argv) {
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
 
-  setup(argc, argv);
-  /*config_set_defaults(&config);*/
-  /*parse_command_line_options(argc, argv, &config);*/
-  /*set_log_target();*/
+  Config config = setup(argc, argv);
 
   log_event("HONK HONK");
   log_event("Setting starting selection to %d", config.start_at_nth - 1);
@@ -536,7 +533,7 @@ int main(int argc, char **argv) {
   log_event("  last  =%s", menu_items.lines[menu_items.count - 1]);
 
   log_event("SDL starting");
-  initSDL();
+  initSDL(config);
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
     log_event("Unable to init SDL: %s\n", SDL_GetError());
     quit(1);
@@ -560,7 +557,7 @@ int main(int argc, char **argv) {
   Uint32 time_since_last_event = 0;
   Uint32 time_since_last_repeat = 0;
 
-  first_render();
+  first_render(config);
 
   while (1) {
     poll_result = SDL_PollEvent(&event);
@@ -568,7 +565,7 @@ int main(int argc, char **argv) {
     if (poll_result) {
       last_event_at = SDL_GetTicks();
       if (handleInput(event)) {
-        render();
+        render(config);
       }
     }
 
@@ -580,12 +577,12 @@ int main(int argc, char **argv) {
       if (time_since_last_event > BUTTON_REPEAT_DELAY_MS &&
           time_since_last_repeat > BUTTON_REPEAT_INTERVAL) {
         handleInput(event);
-        render();
+        render(config);
       }
     }
 
     if (config.user_inactivity_timeout_ms && !poll_result && time_since_last_event > config.user_inactivity_timeout_ms) {
-      timeout();
+      timeout(config.user_inactivity_timeout_ms);
     }
   }
 

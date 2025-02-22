@@ -3,7 +3,7 @@
 
 Test(cli_opts, parse_color_through_command_line) {
     Config config;
-    config_set_defaults(&config);
+    /*config_set_defaults(&config);*/
 
     // Simulate command-line arguments
     char *argv[] = {

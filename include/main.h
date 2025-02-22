@@ -8,10 +8,10 @@
 
 #include "cli_opts.h"
 
-void initSDL(void);
+void initSDL(Config config);
 void cleanup(void);
 SDL_Surface* create_text_surface(char* text, Color color, TTF_Font* font);
 TTF_Font* load_font(char *font_filepath, int font_size);
-int setup(int argc, char **argv);
+Config setup(int argc, char **argv);
 
 #endif
