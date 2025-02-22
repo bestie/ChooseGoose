@@ -34,6 +34,7 @@
 
 // limited use global state for signal handling and logging
 State* global_state;
+FILE* log_file;
 
 void cleanup(void) {
   cleanup_state(global_state);
@@ -54,12 +55,11 @@ void terminate_at_file_extension(char *filename) {
   }
 }
 
-void set_log_target(State* state, char log_filepath[]) {
+void set_log_target_by_filepath(char log_filepath[]) {
   if (strlen(log_filepath) == 0) {
     return;
   }
 
-  FILE* log_file;
   if (strcmp(log_filepath, "stderr") == 0) {
     log_file = stderr;
   } else if (strcmp(log_filepath, "stdout") == 0) {
@@ -67,12 +67,13 @@ void set_log_target(State* state, char log_filepath[]) {
   } else {
     log_file = fopen(log_filepath, "a");
   }
+}
 
-  state->log_file = log_file;
+void set_log_file_pointer(FILE* file) {
+  log_file = file;
 }
 
 void log_event(const char *format, ...) {
-  FILE *log_file = global_state->log_file;
   if (!log_file) {
     return;
   }
@@ -483,8 +484,8 @@ void event_loop(Config* config, State* state) {
   }
 }
 
-void setup(Config *config, State *state) {
-  set_log_target(state, config->log_filepath);
+void goose_setup(Config *config, State *state) {
+  set_log_target_by_filepath(config->log_filepath);
 
   log_event("HONK HONK");
   log_event("Setting starting selection to %d", config->start_at_nth - 1);
@@ -514,9 +515,8 @@ int main(int argc, char **argv) {
   parse_command_line_options(argc, argv, config);
 
   State* state = init_state();
-  global_state = state;
 
-  setup(config, state);
+  goose_setup(config, state);
   event_loop(config, state);
 
   log_event("Done");
