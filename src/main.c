@@ -179,8 +179,9 @@ void initSDL(void) {
 }
 
 void cleanup(void) {
-  SDL_FreeSurface(background_image);
+  SDL_FreeSurface(title);
   SDL_FreeSurface(screen);
+  SDL_FreeSurface(background_image);
   if (joystick) {
     SDL_JoystickClose(joystick);
   }
@@ -588,5 +589,7 @@ int main(int argc, char **argv) {
     }
   }
 
+  log_event("Done");
+  cleanup();
   return 0;
 }
