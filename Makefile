@@ -210,3 +210,8 @@ clean_rg: adb-start
 	adb start-server
 	adb usb
 
+.PHONY: tarball
+tarball: build/choosegoose.tar.gz
+
+build/choosegoose.tar.gz: $(BUILD_DIR) $(SOURCES) $(TEST_SOURCES) include/*.h
+	git ls-files | grep -E -v "\.(png|mkv)$$" | tar -czf $@ -T -
