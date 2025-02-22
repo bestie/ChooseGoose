@@ -1,6 +1,7 @@
 #include <SDL/SDL_events.h>
-#include <SDL/SDL_image.h>
+#include <SDL/SDL_events.h>
 #include <SDL/SDL_ttf.h>
+#include <SDL/SDL_image.h>
 
 #include <signal.h>
 #include <stdbool.h>
@@ -12,6 +13,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "main.h"
 #include "background_image.c"
 #include "cli_opts.h"
 #include "font.c"
@@ -152,7 +154,10 @@ TTF_Font* load_font(char *font_filepath, int font_size) {
 
 void initSDL(void) {
   log_event("SDL initialization started.");
-  SDL_Init(SDL_INIT_VIDEO);
+  if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+    log_event("SDL_Init failed: %s", SDL_GetError());
+  }
+
   TTF_Init();
   SDL_ShowCursor(SDL_DISABLE);
 
@@ -496,13 +501,22 @@ void signal_handler(int signal_number) {
   }
 }
 
+int setup(int argc, char **argv) {
+  config_set_defaults(&config);
+  parse_command_line_options(argc, argv, &config);
+  set_log_target();
+
+  return 0;
+}
+
 int main(int argc, char **argv) {
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
 
-  config_set_defaults(&config);
-  parse_command_line_options(argc, argv, &config);
-  set_log_target();
+  setup(argc, argv);
+  /*config_set_defaults(&config);*/
+  /*parse_command_line_options(argc, argv, &config);*/
+  /*set_log_target();*/
 
   log_event("HONK HONK");
   log_event("Setting starting selection to %d", config.start_at_nth - 1);

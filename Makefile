@@ -112,8 +112,32 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-$(TARGET): $(BUILD_DIR) $(BIN_DIR) $(COMPILED_FONT) $(COMPILED_BG_IMAGE) $(OBJECTS)
+$(OBJECTS): $(COMPILED_FONT) $(COMPILED_BG_IMAGE)
+
+$(TARGET): $(BUILD_DIR) $(BIN_DIR) $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
+
+### Tests #####################################################################
+
+TEST_BUILD_DIR = $(BUILD_DIR)/tests
+TEST_OBJ_DIR = $(TEST_BUILD_DIR)/obj
+TEST_SRC_DIR = tests
+TEST_SOURCES = $(wildcard $(TEST_SRC_DIR)/*.c)
+TEST_OBJECTS = $(TEST_SOURCES:$(TEST_SRC_DIR)/%.c=$(TEST_OBJ_DIR)/%.o)
+TEST_EXECUTABLE = $(TEST_BUILD_DIR)/$(PROJECT_SHORT)_tests
+
+.PHONY: test
+test: $(TEST_EXECUTABLE)
+	./$(TEST_EXECUTABLE) --jobs 1
+
+$(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.c
+	mkdir -p $(TEST_OBJ_DIR)
+	$(CC) $(CFLAGS) $(INCLUDES) -I$(PREFIX)/include/criterion -Isrc -c $< -o $@
+
+$(TEST_EXECUTABLE): $(TARGET) $(TEST_OBJECTS) $(TEST_SOURCES)
+	echo "Building tests"
+	echo "objects in $(OBJECTS)"
+	$(CC) $(TEST_OBJECTS) $(OBJECTS) -o $@ -lcriterion $(LDFLAGS)
 
 ### Docker #####################################################################
 
