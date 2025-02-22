@@ -13,6 +13,7 @@ void init_sdl(Config* config, State* state);
 void cleanup();
 SDL_Surface* create_text_surface(char* text, Color color, TTF_Font* font);
 TTF_Font* load_font(char *font_filepath, int font_size);
-void setup(int argc, char **argv, Config *config, State *state);
+void setup(Config *config, State *state);
+void event_loop(Config *config, State *state);
 
 #endif

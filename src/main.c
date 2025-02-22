@@ -115,9 +115,32 @@ void init_sdl(Config *config, State* state) {
     quit(1);
   }
 
-  TTF_Init();
+  log_event("Configuring SDL");
   SDL_ShowCursor(SDL_DISABLE);
+  SDL_WM_SetCaption(config->title, NULL);
+  SDL_EnableKeyRepeat(config->key_repeat_delay_ms, config->key_repeat_interval_ms);
 
+  log_event("SDL_SetVideoMode(SCREEN_WIDTH=%d, SCREEN_HEIGHT=%d, bpp=%d)",
+            config->screen_width, config->screen_height, config->bits_per_pixel);
+  state->screen = SDL_SetVideoMode(config->screen_width, config->screen_height,
+                            config->bits_per_pixel, SDL_SWSURFACE);
+
+
+  log_event("Looking for joysticks");
+  if (SDL_NumJoysticks() > 0) {
+    state->joystick = SDL_JoystickOpen(0);
+    if (state->joystick == NULL) {
+      log_event("Unable to open joystick: %s\n", SDL_GetError());
+      quit(1);
+    } else {
+      log_event("Joystick opened: %s\n", SDL_JoystickName(0));
+    }
+  } else {
+    log_event("No joysticks found");
+  }
+
+  log_event("Loading fonts");
+  TTF_Init();
   state->title_font = load_font(config->font_filepath, config->title_font_size);
   state->font = load_font(config->font_filepath, config->font_size);
 
@@ -125,22 +148,6 @@ void init_sdl(Config *config, State* state) {
 
   log_event("Font loaded size=%d, font_height=%dpx", config->font_size,
             state->font_pixel_height);
-  log_event("SDL_SetVideoMode(SCREEN_WIDTH=%d, SCREEN_HEIGHT=%d, bpp=%d)",
-            config->screen_width, config->screen_height, config->bits_per_pixel);
-
-  state->screen = SDL_SetVideoMode(config->screen_width, config->screen_height,
-                            config->bits_per_pixel, SDL_SWSURFACE);
-
-  SDL_WM_SetCaption(config->title, NULL);
-  SDL_EnableKeyRepeat(config->key_repeat_delay_ms, config->key_repeat_interval_ms);
-
-  if (SDL_NumJoysticks() > 0) {
-    state->joystick = SDL_JoystickOpen(0);
-    if (state->joystick == NULL) {
-      log_event("Unable to open joystick: %s\n", SDL_GetError());
-      quit(1);
-    }
-  }
 
 }
 
@@ -435,31 +442,6 @@ void signal_handler(int signal_number) {
   }
 }
 
-void setup(int argc, char **argv, Config *config, State *state) {
-  parse_command_line_options(argc, argv, config);
-  set_log_target(state, config->log_filepath);
-  global_state = state;
-
-  log_event("HONK HONK");
-  log_event("Setting starting selection to %d", config->start_at_nth - 1);
-  state->selected_index = config->start_at_nth - 1;
-
-  log_event("Reading menu items");
-  state->menu_items = read_lines_from_stdin(MAX_MENU_ITEMS, MAX_LINE_LENGTH);
-
-  if (state->menu_items->count < 1) {
-    log_event("No menu items on stdin");
-    quit(1);
-  }
-
-  log_event("Menu items count=%d", state->menu_items->count);
-  log_event("  first =%s", state->menu_items->lines[0]);
-  log_event("  last  =%s", state->menu_items->lines[state->menu_items->count - 1]);
-
-  log_event("SDL starting");
-  init_sdl(config, state);
-}
-
 void event_loop(Config* config, State* state) {
   log_event("SDL waiting for event");
   SDL_Event event;
@@ -474,6 +456,7 @@ void event_loop(Config* config, State* state) {
 
   while (1) {
     poll_result = SDL_PollEvent(&event);
+    log_event(" menu_item_height = %d", state->menu_item_height);
 
     if (poll_result) {
       last_event_at = SDL_GetTicks();
@@ -500,14 +483,40 @@ void event_loop(Config* config, State* state) {
   }
 }
 
+void setup(Config *config, State *state) {
+  set_log_target(state, config->log_filepath);
+
+  log_event("HONK HONK");
+  log_event("Setting starting selection to %d", config->start_at_nth - 1);
+  state->selected_index = config->start_at_nth - 1;
+
+  log_event("Reading menu items");
+  state->menu_items = read_lines_from_stdin(MAX_MENU_ITEMS, MAX_LINE_LENGTH);
+
+  if (state->menu_items->count < 1) {
+    log_event("No menu items on stdin");
+    quit(1);
+  }
+
+  log_event("Menu items count=%d", state->menu_items->count);
+  log_event("  first =%s", state->menu_items->lines[0]);
+  log_event("  last  =%s", state->menu_items->lines[state->menu_items->count - 1]);
+
+  log_event("SDL starting");
+  init_sdl(config, state);
+}
+
 int main(int argc, char **argv) {
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
 
   Config* config = default_config();
-  State* state = init_state();
-  setup(argc, argv, config, state);
+  parse_command_line_options(argc, argv, config);
 
+  State* state = init_state();
+  global_state = state;
+
+  setup(config, state);
   event_loop(config, state);
 
   log_event("Done");
