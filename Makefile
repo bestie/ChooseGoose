@@ -46,6 +46,10 @@ all: compile_flags.txt docker-compile docker-compile-rg35xx
 .PHONY: goose
 goose: $(TARGET)
 
+.PHONY: demo
+demo: $(TARGET)
+	ls -1 | ./$(TARGET) --title "It's a demo" --background-color FFFF00
+
 # Default clean task does not remove the font download because it's annoying
 # to download after every clean when it doesn't actaully change.
 .PHONY: clean
