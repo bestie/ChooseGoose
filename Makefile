@@ -207,6 +207,7 @@ clean_rg: adb-start
 	adb shell rm -rf /mnt/mmc/Roms/APPS/ChooseGoos*
 
 .PHONY: adb-start
+adb-start:
 	adb start-server
 	adb usb
 
