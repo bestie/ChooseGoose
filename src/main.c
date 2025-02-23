@@ -66,6 +66,11 @@ void set_log_target_by_filepath(char log_filepath[]) {
   } else {
     log_file = fopen(log_filepath, "a");
   }
+
+  if (!log_file) {
+    fprintf(stderr, "Unable to open log file `%s`\n", log_filepath);
+    quit(1);
+  }
 }
 
 void set_log_file_pointer(FILE* file) {
