@@ -3,6 +3,7 @@
 #include "SDL/SDL_ttf.h"
 #include <SDL/SDL.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 typedef struct {
   int count;
@@ -19,6 +20,7 @@ typedef struct {
     int font_pixel_height;
     int selected_index;
     int button_repeat_active;
+    bool cover_images_enabled;
 
     Uint32 background_color;
     SDL_Surface *screen;

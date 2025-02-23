@@ -30,6 +30,7 @@ Config* default_config() {
   config->screen_height = 480;
   config->bits_per_pixel = 32;
   strcpy(config->log_filepath, "");
+  strcpy(config->cover_images_dir, "");
   strcpy(config->title, "");
   strcpy(config->font_filepath, "");
   strcpy(config->background_image_filepath, "");
@@ -155,6 +156,7 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       {"key-repeat-interval-ms", required_argument, 0, 0},
       {"menu-item-padding", required_argument, 0, 0},
       {"menu-item-margin", required_argument, 0, 0},
+      {"cover-images-dir", required_argument, 0, 0},
       {0, 0, 0, 0}};
 
   bool debug = false;
@@ -248,6 +250,9 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       break;
     case 25:
       config->menu_item_margin = strtoul(optarg, NULL, 10);
+      break;
+    case 26:
+      strncpy(config->cover_images_dir, optarg, 255);
       break;
     default:
       print_usage();

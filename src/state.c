@@ -20,6 +20,7 @@ State* init_state() {
     state->font = NULL;
     state->joystick = NULL;
     state->menu_items = NULL;
+    state->cover_images_enabled = false;
 
     return state;
 }

@@ -31,6 +31,7 @@ typedef struct {
   unsigned int key_repeat_interval_ms;
   unsigned int menu_item_padding;
   unsigned int menu_item_margin;
+  char cover_images_dir[255];
 } Config;
 
 Config* default_config(void);

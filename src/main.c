@@ -353,13 +353,45 @@ void set_title(Config *config, State* state) {
   }
 }
 
+void render_cover_image(Config* config, State* state) {
+  if(!state->cover_images_enabled) {
+    return;
+  }
+
+  char* selected_item = state->menu_items->lines[state->selected_index];
+
+  char* filename = malloc(sizeof(char) * 255);
+  char* filepath = malloc(sizeof(char) * 255);
+
+  strcpy(filename, selected_item);
+  terminate_at_file_extension(filename);
+  sprintf(filepath, "%s/%s.png", config->cover_images_dir, filename);
+  log_event("Looking for cover image %s", filepath);
+
+  if(access(filepath, R_OK) != -1) {
+    log_event("Found cover image %s", filepath);
+    SDL_Surface* cover_image = IMG_Load(filepath);
+    SDL_BlitSurface(cover_image, NULL, state->screen, NULL);
+    sdl.free_surface(cover_image);
+  } else {
+    log_event("No cover image found for %s", selected_item);
+  }
+
+  free(filename);
+  free(filepath);
+}
+
 void render(Config* config, State* state) {
   BunchOfLines* menu_items = state->menu_items;
 
   SDL_FillRect(state->screen, NULL, state->background_color);
-  if (state->background_image) {
-    SDL_BlitSurface(state->background_image, NULL, state->screen, NULL);
+  SDL_Surface* background_image = state->background_image;
+  if(background_image) {
+    SDL_BlitSurface(background_image, NULL, state->screen, NULL);
   }
+
+  render_cover_image(config, state);
+
   if (state->title) {
     SDL_Rect dest = {config->left_padding, config->top_padding, 0, 0};
     SDL_BlitSurface(state->title, NULL, state->screen, &dest);
@@ -424,13 +456,16 @@ void render(Config* config, State* state) {
     dest.h = 0;
 
     SDL_Surface** menu_item = create_menu_item(config, state, text, selected_state);
+
     log_event("blitting menu item %d at %d,%d", menu_index, dest.x, dest.y);
     sdl.blit_surface(menu_item[0], NULL, state->screen, &dest);
     dest.x += config->menu_item_padding;
     dest.y += config->menu_item_padding;
     sdl.blit_surface(menu_item[1], NULL, state->screen, &dest);
     log_event("blitting menu item %d at %d,%d", menu_index, dest.x, dest.y);
-    /*sdl.free_surface(menu_item);*/
+    sdl.free_surface(menu_item[0]);
+    sdl.free_surface(menu_item[1]);
+    free(menu_item);
   }
 
   log_event("flipping screen");
@@ -547,6 +582,12 @@ void goose_setup(Config* config, State *state) {
 
   log_event("SDL starting");
   init_sdl(config, state);
+
+  // check if cover images directory is set and exists
+  if(strlen(config->cover_images_dir) > 0 && access(config->cover_images_dir, R_OK) != -1) {
+    log_event("Cover images enabled");
+    state->cover_images_enabled = true;
+  }
 }
 
 int main(int argc, char **argv) {
