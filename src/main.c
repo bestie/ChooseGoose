@@ -532,10 +532,14 @@ void event_loop(Config* config, State* state) {
   Uint32 last_repeat_at = 0;
   Uint32 time_since_last_event = 0;
   Uint32 time_since_last_repeat = 0;
+  Uint32 loop_started = 0;
+  Uint32 loop_target_time = 1000/60;
 
   first_render(config, state);
 
   while (1) {
+    loop_started = sdl.get_ticks();
+
     poll_result = sdl.poll_event(&event);
 
     if (poll_result) {
@@ -560,6 +564,11 @@ void event_loop(Config* config, State* state) {
 
     if (config->user_inactivity_timeout_ms && !poll_result && time_since_last_event > config->user_inactivity_timeout_ms) {
       timeout(config->user_inactivity_timeout_ms);
+    }
+
+    Uint32 elapsed = sdl.get_ticks() - loop_started;
+    if (elapsed < loop_target_time) {
+      sdl.delay(loop_target_time - elapsed);
     }
   }
 }
