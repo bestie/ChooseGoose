@@ -29,6 +29,8 @@ typedef struct {
   unsigned int user_inactivity_timeout_ms;
   unsigned int key_repeat_delay_ms;
   unsigned int key_repeat_interval_ms;
+  unsigned int menu_item_padding;
+  unsigned int menu_item_margin;
 } Config;
 
 Config* default_config(void);

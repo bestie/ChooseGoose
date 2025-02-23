@@ -49,6 +49,8 @@ Config* default_config() {
   config->user_inactivity_timeout_ms = false;
   config->key_repeat_delay_ms = 400;
   config->key_repeat_interval_ms = 50;
+  config->menu_item_padding = 2;
+  config->menu_item_margin= 0;
 
   return config;
 }
@@ -103,6 +105,8 @@ void print_usage(void) {
   fprintf(stdout, "  --bottom-padding=N                       In pixels. Default 10.\n");
   fprintf(stdout, "  --left-padding=N                         In pixels. Default 10.\n");
   fprintf(stdout, "  --right-padding=N                        In pixels. Default 10.\n");
+  fprintf(stdout, "  --menu-item-padding=N                    Padding around menu text items. Default 2.\n");
+  fprintf(stdout, "  --menu-item-margin=N                     Space between menu items in pixels. Default 0.\n");
   fprintf(stdout, "  --start-at-nth=N                         List item to start menu from; default 1 (first), set to 0 for no initial selection.\n");
   fprintf(stdout, "  --user-inactivity-timeout-ms=N           Quits after N milliseconds if the user has not made an input. Exits with status 124 like GNU timeout.\n");
   fprintf(stdout, "  --key-repeat-delay-ms=N                  Delay in milliseconds before key repeat starts. See SDL_EnableKeyRepeat.\n");
@@ -149,6 +153,8 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       {"user-inactivity-timeout-ms", required_argument, 0, 0},
       {"key-repeat-delay-ms", required_argument, 0, 0},
       {"key-repeat-interval-ms", required_argument, 0, 0},
+      {"menu-item-padding", required_argument, 0, 0},
+      {"menu-item-margin", required_argument, 0, 0},
       {0, 0, 0, 0}};
 
   bool debug = false;
@@ -236,6 +242,12 @@ void parse_command_line_options(int argc, char **argv, Config *config) {
       break;
     case 23:
       config->key_repeat_interval_ms = strtoul(optarg, NULL, 10);
+      break;
+    case 24:
+      config->menu_item_padding = strtoul(optarg, NULL, 10);
+      break;
+    case 25:
+      config->menu_item_margin = strtoul(optarg, NULL, 10);
       break;
     default:
       print_usage();

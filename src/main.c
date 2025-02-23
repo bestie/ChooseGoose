@@ -21,7 +21,6 @@
 
 #define MAX_MENU_ITEMS 4096
 #define MAX_LINE_LENGTH 255
-#define MENU_ITEM_PADDING 3
 
 #define BUTTON_A 0
 #define BUTTON_B 1
@@ -136,7 +135,7 @@ SDL_Interface* get_sdl_interface(void) {
   return &sdl;
 }
 
-void init_sdl(Config *config, State* state) {
+void init_sdl(Config* config, State* state) {
   log_event("SDL initialization started.");
   if (sdl.init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
     log_event("Unable to init SDL: %s\n", SDL_GetError());
@@ -191,7 +190,7 @@ SDL_Surface* create_text_surface(char *text, Color color, TTF_Font *font) {
   return text_surface;
 }
 
-SDL_Surface* create_menu_item(Config* config, State* state, char *text, int selected) {
+SDL_Surface** create_menu_item(Config* config, State* state, char *text, int selected) {
   Color text_color;
 
   if (selected) {
@@ -200,26 +199,32 @@ SDL_Surface* create_menu_item(Config* config, State* state, char *text, int sele
     text_color = config->text_color;
   }
 
-  SDL_Surface *text_surface = create_text_surface(text, text_color, state->font);
+  SDL_Surface* text_surface = create_text_surface(text, text_color, state->font);
+  // Can't decide if the menu item with background color should fill the whole
+  // screen width or just the width of the text
+  int menu_item_width = config->screen_width - (config->left_padding + config->right_padding);
+  /*int menu_item_width = text_surface->w + config->menu_item_padding * 2;*/
+  int menu_item_height = state->font_pixel_height + config->menu_item_padding * 2;
+  SDL_Surface* text_bg_surface;
 
   if (selected && config->text_selected_background_color.r > -1) {
+    text_bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, menu_item_width, menu_item_height, config->bits_per_pixel, 0,0,0,0);
     Color bg = config->text_selected_background_color;
     Uint32 sdl_bg_color = SDL_MapRGB(state->screen->format, bg.r, bg.g, bg.b);
-    // Can't decide if the menu item with background color should fill the whole
-    // screen width or just the width of the text
-    int menu_item_width = config->screen_width - (config->left_padding + config->right_padding);
-    /*int menu_item_width = text_surface->w + MENU_ITEM_PADDING * 2;*/
-    SDL_Surface *text_bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, menu_item_width, state->font_pixel_height, config->bits_per_pixel, 0,0,0,0);
     SDL_Rect fillRect = { 0, 0, text_bg_surface->w, text_bg_surface->h };
     SDL_FillRect(text_bg_surface, &fillRect, sdl_bg_color);
-
-    SDL_BlitSurface(text_surface, NULL, text_bg_surface, NULL);
-    SDL_FreeSurface(text_surface);
-    text_surface = text_bg_surface;
+  } else {
+    // Surface of size zero so two surfaces are always returned
+    text_bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, 0, 0, config->bits_per_pixel, 0,0,0,0);
   }
 
-  return text_surface;
+  SDL_Surface** menu_item = malloc(sizeof(SDL_Surface*) * 2);
+  menu_item[0] = text_bg_surface;
+  menu_item[1] = text_surface;
+
+  return menu_item;
 }
+
 
 void menu_move_selection(State* state, int increment, int cycle) {
   BunchOfLines* menu_items = state->menu_items;
@@ -344,7 +349,7 @@ int handle_input(State* state, SDL_Event event) {
 void set_title(Config *config, State* state) {
   if (strlen(config->title)) {
     state->title = create_text_surface(config->title, config->text_color, state->title_font);
-    state->title_height = state->title->h + MENU_ITEM_PADDING * 2;
+    state->title_height = state->title->h + config->menu_item_padding * 2;
   }
 }
 
@@ -360,7 +365,7 @@ void render(Config* config, State* state) {
     SDL_BlitSurface(state->title, NULL, state->screen, &dest);
   }
 
-  int menu_y_offset = config->top_padding + state->title_height;
+  int menu_y_offset = config->top_padding + state->title_height + config->menu_item_margin;
 
   int default_items_above = state->menu_max_items / 2;
   int default_items_below = state->menu_max_items - default_items_above - 1;
@@ -392,7 +397,7 @@ void render(Config* config, State* state) {
 
   int menu_index = 0;
 
-  for (int i = 0; i < state->menu_items->count; i++) {
+  for (int i = 0; i < state->menu_max_items; i++) {
     if (visible_menu_end - visible_menu_end > i) {
       log_event("Done rendering items %d", i);
       break;
@@ -414,13 +419,16 @@ void render(Config* config, State* state) {
 
     SDL_Rect dest;
     dest.x = config->left_padding;
-    dest.y = menu_y_offset + i * state->menu_item_height;
+    dest.y = menu_y_offset + i * (state->menu_item_height + config->menu_item_margin);
     dest.w = 0;
     dest.h = 0;
 
-    SDL_Surface *menu_item = create_menu_item(config, state, text, selected_state);
+    SDL_Surface** menu_item = create_menu_item(config, state, text, selected_state);
     log_event("blitting menu item %d at %d,%d", menu_index, dest.x, dest.y);
-    sdl.blit_surface(menu_item, NULL, state->screen, &dest);
+    sdl.blit_surface(menu_item[0], NULL, state->screen, &dest);
+    dest.x += config->menu_item_padding;
+    dest.y += config->menu_item_padding;
+    sdl.blit_surface(menu_item[1], NULL, state->screen, &dest);
     log_event("blitting menu item %d at %d,%d", menu_index, dest.x, dest.y);
     /*sdl.free_surface(menu_item);*/
   }
@@ -455,9 +463,9 @@ void first_render(Config *config, State* state) {
       SDL_MapRGB(state->screen->format, config->background_color.r,
                  config->background_color.g, config->background_color.b);
 
-  state->menu_item_height = state->font_pixel_height + MENU_ITEM_PADDING;
+  state->menu_item_height = state->font_pixel_height + 2*config->menu_item_padding;
   state->menu_height = config->screen_height - (config->top_padding + config->bottom_padding + state->title_height);
-  state->menu_max_items = state->menu_height / state->menu_item_height;
+  state->menu_max_items = state->menu_height / (state->menu_item_height + config->menu_item_margin);
 
   log_event("top padding= %d", config->top_padding);
   log_event("bottom padding= %d", config->bottom_padding);
