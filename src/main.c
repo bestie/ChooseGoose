@@ -205,7 +205,10 @@ SDL_Surface* create_menu_item(Config* config, State* state, char *text, int sele
   if (selected && config->text_selected_background_color.r > -1) {
     Color bg = config->text_selected_background_color;
     Uint32 sdl_bg_color = SDL_MapRGB(state->screen->format, bg.r, bg.g, bg.b);
-    int menu_item_width = config->screen_width;
+    // Can't decide if the menu item with background color should fill the whole
+    // screen width or just the width of the text
+    int menu_item_width = config->screen_width - (config->left_padding + config->right_padding);
+    /*int menu_item_width = text_surface->w + MENU_ITEM_PADDING * 2;*/
     SDL_Surface *text_bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, menu_item_width, state->font_pixel_height, config->bits_per_pixel, 0,0,0,0);
     SDL_Rect fillRect = { 0, 0, text_bg_surface->w, text_bg_surface->h };
     SDL_FillRect(text_bg_surface, &fillRect, sdl_bg_color);
