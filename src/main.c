@@ -455,7 +455,7 @@ void set_background_image(State* state, char *background_image_filepath) {
   }
 }
 
-void first_render(Config *config, State* state) {
+void first_render(Config* config, State* state) {
   set_background_image(state, config->background_image_filepath);
   set_title(config, state);
 
@@ -524,7 +524,7 @@ void event_loop(Config* config, State* state) {
   }
 }
 
-void goose_setup(Config *config, State *state) {
+void goose_setup(Config* config, State *state) {
   set_log_target_by_filepath(config->log_filepath);
 
   log_event("HONK HONK");

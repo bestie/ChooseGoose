@@ -194,7 +194,6 @@ rg-logs:
 	adb shell touch $(RG_INSTALL_DIR)/log
 	echo " ~~~ Open the app 👉 🎮"
 	adb shell busybox tail -f $(RG_DESTINATION)/log
-	# Get the directory listing and filter for the name of the TV Show
 
 .PHONY: adb-shell
 adb-shell: adb-start
