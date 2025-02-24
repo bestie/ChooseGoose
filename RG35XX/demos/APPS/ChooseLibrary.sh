@@ -32,14 +32,17 @@ CORE="/mnt/mmc/CFW/retroarch/.retroarch/cores/ffmpeg_libretro.so"
 # Path to the content 
 CONTENT_DIR="/mnt/SDCARD/Roms/VIDEOS"
 # ChooseGoose options to re-use
-title="~~ Silly Video Library"
-goose_opts="--title-font-size 28 --font-size 24 --text-color DD0000 --text-selected-color 00CC00 --hide-file-extensions true --top-padding 20"
-background_image="./assets/ChooseGooseVideoLibrary640x480.png"
+title="Silly Video Library"
+text_color="446C7A"
+text_selected_color="F8E4A5"
+text_selected_background_color="323232"
+goose_opts="--font $HOME/assets/iMWritingDuoNerdFontPropo-Bold.ttf --title-font-size 33 --font-size 30 --text-color "$text_color" --text-selected-color $text_selected_color --text-selected-background-color $text_selected_background_color --hide-file-extensions true --left-padding 10 --top-padding 10 --menu-item-padding 3 --menu-item-margin 0"
+background_image="./assets/VCR.png"
 
 # List the TV Episodes, remove the season and episode numbers to create a list of shows
 tv_shows=$(ls $CONTENT_DIR | grep -v Imgs | sed -E 's/[^\w][sS][0-9]{2}[eE][0-9]{2}.*//' | uniq)
 # Select from the list of shows
-tv_show=$(echo "$tv_shows" | ./choosegoose --title "$title: TV Shows ~~" --background-image "$background_image" --text-selected-background-color DDDDDD $goose_opts)
+tv_show=$(echo "$tv_shows" | ./choosegoose --title "$title: TV Shows" --background-image "$background_image" $goose_opts)
 # Filter all episodes for just that show
 episodes=$(ls $CONTENT_DIR | grep -v Imgs | grep "$tv_show")
 
