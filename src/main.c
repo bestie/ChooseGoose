@@ -507,6 +507,10 @@ void first_render(Config* config, State* state) {
   state->menu_height = config->screen_height - (config->top_padding + config->bottom_padding + state->title_height);
   state->menu_max_items = state->menu_height / (state->menu_item_height + config->menu_item_margin);
 
+  if(state->menu_max_items > state->menu_items->count) {
+    state->menu_max_items = state->menu_items->count;
+  }
+
   log_event("top padding= %d", config->top_padding);
   log_event("bottom padding= %d", config->bottom_padding);
   log_event("menu height = %d", state->menu_height);
