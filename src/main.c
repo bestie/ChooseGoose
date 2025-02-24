@@ -207,8 +207,8 @@ SDL_Surface** create_menu_item(Config* config, State* state, char *text, int sel
   SDL_Surface* text_surface = create_text_surface(text, text_color, state->font);
   // Can't decide if the menu item with background color should fill the whole
   // screen width or just the width of the text
-  int menu_item_width = config->screen_width - (config->left_padding + config->right_padding);
-  /*int menu_item_width = text_surface->w + config->menu_item_padding * 2;*/
+  /*int menu_item_width = config->screen_width - (config->left_padding + config->right_padding);*/
+  int menu_item_width = text_surface->w + config->menu_item_padding * 2;
   int menu_item_height = state->font_pixel_height + config->menu_item_padding * 2;
   SDL_Surface* text_bg_surface;
 
