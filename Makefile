@@ -41,7 +41,7 @@ SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 .PHONY: all
-all: compile_flags.txt docker-compile docker-compile-rg35xx
+all: compile_flags.txt docker-compile docker-compile-rg35xx rg-demos
 
 .PHONY: goose
 goose: $(TARGET)
@@ -147,7 +147,6 @@ $(TEST_EXECUTABLE): $(TARGET) $(TEST_OBJECTS) $(TEST_SOURCES)
 
 DOCKER_TAG ?= choosegoose:latest
 DOCKER_BUILD_CACHE_FILE = build/.docker-build
-RG_EXECUTABLE = build/Linux-arm-uclibcgnueabi/bin/choosegoose
 
 .PHONY: docker-build
 docker-build: $(BUILD_DIR) $(DOCKER_BUILD_CACHE_FILE)
@@ -162,8 +161,6 @@ docker-compile: $(SOURCES) $(DOCKER_BUILD_CACHE_FILE)
 .PHONY: docker-compile-rg35xx
 docker-compile-rg35xx: $(SOURCES) $(DOCKER_BUILD_CACHE_FILE)
 	docker run --platform linux/amd64 --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) bash -c "source cross_compilation_env.sh && make goose"
-	cp -r RG35XX build/
-	cp $(RG_EXECUTABLE) build/RG35XX/demos/APPS/ChooseGoose/
 
 .PHONY: docker-shell
 docker-shell: $(DOCKER_BUILD_CACHE_FILE)
@@ -175,17 +172,24 @@ docker_clean:
 
 ### RG35XX #####################################################################
 
-RG_APPS = /mnt/mmc/Roms/APPS
-RG_ROMS = /mnt/SDCARD/Roms
+RG_ROMS = /mnt/mmc/Roms
 RG_INSTALL_DIR = $(RG_APPS)/$(PROJECT_NAME)
+RG_EXECUTABLE = build/Linux-arm-uclibcgnueabi/bin/choosegoose
+
+.PHONY: rg-demos
+rg-demos:
+	cp -r RG35XX build/
+	cp $(RG_EXECUTABLE) build/RG35XX/demos/Roms/APPS/ChooseGoose/
+	RG35XX/demos/videos.sh build/RG35XX/demos/Roms/TV/
+
+build/RG35XX/demos/Roms/APPS/ChooseGoose/choosegoose:
+	cp -r RG35XX build/
+	cp $(RG_EXECUTABLE) build/RG35XX/demos/Roms/APPS/ChooseGoose/
 
 .PHONY: rg-install
-rg-install:
+rg-install: rg-demos
 	adb shell mkdir -p $(RG_INSTALL_DIR)
-	cp -r RG35XX build/
-	cp $(RG_EXECUTABLE) build/RG35XX/demos/APPS/ChooseGoose/
-	adb push --sync build/RG35XX/demos/APPS/* $(RG_APPS)
-	adb push --sync build/RG35XX/demos/ROMS/* $(RG_ROMS)
+	adb push --sync build/RG35XX/demos/Roms/* $(RG_ROMS)
 	adb shell ls -l $(RG_APPS)
 	adb shell ls -l $(RG_DESTINATION)
 
@@ -200,10 +204,10 @@ adb-shell: adb-start
 	adb shell
 
 .PHONY: clean-rg
-clean_rg:
-	adb start-server
-	adb usb
-	adb shell rm -rf /mnt/mmc/Roms/APPS/ChooseGoose*
+clean-rg:
+	adb shell rm -rf $(RG_ROMS)/APPS/ChooseGame.sh
+	adb shell rm -rf $(RG_ROMS)/APPS/ChooseLibrary.sh
+	adb shell rm -rf $(RG_ROMS)/APPS/ChooseGoose
 
 .PHONY: adb-start
 adb-start:
@@ -215,3 +219,4 @@ tarball: build/choosegoose.tar.gz
 
 build/choosegoose.tar.gz: $(BUILD_DIR) $(SOURCES) $(TEST_SOURCES) include/*.h
 	git ls-files | grep -E -v "\.(png|mkv)$$" | tar -czf $@ -T -
+

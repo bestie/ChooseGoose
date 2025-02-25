@@ -10,14 +10,12 @@
 #   Description:                                                               #
 #                                                                              #
 #   Use a silly menu program to simulate a directory structure when all your   #
-#   video files are just all dumped in one place.                              #
+#   video files are just all dumped in flat directory.                         #
 #                                                                              #
-#   Initial menu is provided by the contents of a file named `.choosegoose.txt`#
-#   which lists the TV shows that would otherwise be in directories.           #
-#   This is manual, put what you like in here.                                 #
-#                                                                              #
-#   That selection is then used to filter the directory contents to allow the  #
-#   user to choose from a filtered list of files.                              #
+#   This demo compiles a list of TV shows based on the filenames of the        #
+#   individual episodes. After selecting a TV show, it displays a filtered     #
+#   list of episides just for that show.                                       #
+#   
 #                                                                              #
 ################################################################################
 
@@ -30,7 +28,7 @@ RETROARCH_DIR=/mnt/mmc/CFW/retroarch
 # Path to the Retroarch core for you content
 CORE="/mnt/mmc/CFW/retroarch/.retroarch/cores/ffmpeg_libretro.so"
 # Path to the content 
-CONTENT_DIR="/mnt/SDCARD/Roms/VIDEOS"
+CONTENT_DIR="/mnt/mmc/Roms/TV"
 # ChooseGoose options to re-use
 title="Silly Video Library"
 text_color="446C7A"
