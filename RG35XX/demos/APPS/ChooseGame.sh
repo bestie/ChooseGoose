@@ -99,11 +99,16 @@ style_opts="--title-font-size 28 --font-size 20 --text-color DD0000 --text-selec
 # Loop to allow the user to go back to the system selection
 while true; do
   title="  ~~ Choose a system ~~  "
-  selection=$(echo -e "$system_list" | ./choosegoose --title "$title" --cover-images-dir=/mnt/SDCARD/Roms/MD/Imgs --log-file $HOME/log $style_opts)
-  selected_system_id=$(get_system_id "$selection")
-  core=$(get_core "$selected_system_id")
-  content_dir="$ROMS/$selected_system_id"
+  system_friendly_name=$(echo -e "$system_list" | ./choosegoose --title "$title" --cover-images-dir=/mnt/SDCARD/Roms/MD/Imgs --log-file $HOME/log $style_opts)
+  if [ $? -ne 0 ]; then
+    break
+  fi
+
+  system_id=$(get_system_id "$system_friendly_name")
+  core=$(get_core "$system_id")
+  content_dir="$ROMS/$system_id"
   content_list=$(ls $content_dir | grep -v Imgs | grep -v .xml)
+
   title="  ~~ $system_friendly_name ~~  "
   rom_selection=$(echo "$content_list" | ./choosegoose --title "$title" --cover-images-dir=$content_dir/Imgs --log-file $HOME/log $style_opts)
 
