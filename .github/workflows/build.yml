@@ -23,7 +23,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: linux-binaries-${{ github.ref_name }}
-        path: build/Linux*
+        path: build/Linux*/bin
 
     - name: Upload RG35XX demos
       uses: actions/upload-artifact@v4
