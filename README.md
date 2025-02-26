@@ -71,11 +71,13 @@ Use the following command line options to customize:
 | A                 | confirm selection
 | B                 | exit(0) with no selection
 
-## Getting Started
+## RG35XX Installation
 
-Check out the Demo GarlicOS Video Browser app.
+Check out the GarlicOS Game and Video Browser apps.
 
-To install and try it out, go to the releases page, download and unzip demos.zip, and copy-paste over or merge into your APPS and ROMS directory.
+To install and try it out, go to the [releases page](../../releases), download and unzip RG35XX-demos.zip, and copy-paste over or merge into ROMS directory.
+
+ChooseGoose has no dependencies beyond SDL 1.2 which is already on the device so you can just grab the binary from the demo zip and go play.
 
 ## Things You Could Build With It
 
