@@ -633,8 +633,7 @@ void first_render(Config* config, State* state) {
 void signal_handler(int signal_number) {
     fprintf(stderr, "Caught signal %d\n", signal_number);
     if (signal_number == SIGINT || signal_number == SIGTERM) {
-        quit(signal_number);
-        return;
+        exit(signal_number);
     }
 }
 
