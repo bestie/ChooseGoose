@@ -1,11 +1,9 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <SDL/SDL_events.h>
-#include <SDL/SDL_events.h>
-#include <SDL/SDL_ttf.h>
-#include <SDL/SDL_image.h>
-
+#include <SDL.h>
+#include <SDL_ttf.h>
+#include <SDL_image.h>
 #include "cli_opts.h"
 #include "state.h"
 
@@ -14,7 +12,6 @@ typedef struct {
     int (*init)(Uint32 flags);
     void (*quit)(void);
     SDL_Surface* (*set_video_mode)(int w, int h, int bpp, Uint32 flags);
-    void (*wm_set_caption)(const char *title, const char *icon);
     int (*enable_key_repeat)(int delay, int interval);
     Uint32 (*get_ticks)(void);
     int (*poll_event)(SDL_Event *event);
@@ -29,10 +26,11 @@ typedef struct {
     char* (*joystick_name)(int device_index);
     SDL_Joystick* (*joystick_open)(int device_index);
     int (*ttf_init)(void);
+    SDL_Surface* (*ttf_rendertext_blended)(TTF_Font *font, const char *text, SDL_Color fg);
 } SDL_Interface;
 
-/*// Function to return the default implementation (real SDL functions)*/
-/*SDL_Interface get_real_sdl_interface(void);*/
+SDL_Interface* get_sdl_interface(void);
+void set_sdl_interface(SDL_Interface* interface);
 
 void init_sdl(Config* config, State* state);
 void cleanup();
@@ -40,7 +38,6 @@ void cleanup();
 void goose_setup(Config *config, State *state);
 void event_loop(Config *config, State *state);
 void set_log_file_pointer(FILE* file);
-void set_sdl_interface(SDL_Interface* interface);
-SDL_Interface* get_sdl_interface(void);
+void set_output(FILE*);
 
 #endif

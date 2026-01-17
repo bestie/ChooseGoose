@@ -1,19 +1,17 @@
 PLATFORM ?= $(shell uname -s)
 ARCH ?= $(shell uname -m)
 LIBC ?= glibc
-PREFIX ?= "/usr"
 
 BUILD_DIR = build/$(PLATFORM)-$(ARCH)-$(LIBC)
 
 ifeq ($(PLATFORM), Darwin)
-	# if /usr/local/include exists, otherwise check for /opt/homebrew/include
-	ifneq ("$(wildcard /usr/local/include)", "")
-		PREFIX = /usr/local
-	else
-		PREFIX = /opt/homebrew
-	endif
-
-	MORE_LDS = -framework CoreFoundation -framework Cocoa
+	PREFIX=/opt/homebrew
+	LDFLAGS += -framework CoreFoundation -framework Cocoa
+	LDFLAGS += -Wl,-rpath,@executable_path/../Frameworks
+	DEPENDENCY_INSTALL_CMD = brew install criterion sdl12-compat sdl2_image sdl2_ttf
+else
+	PREFIX=/usr
+	DEPENDENCY_INSTALL_CMD = apt-get install -y libcriterion-dev libsdl1.2-dev libsdl-ttf2.0-dev libsdl-image1.2-dev
 endif
 
 CC ?= $(CROSS_COMPILE)gcc
@@ -21,9 +19,12 @@ CXX ?= $(CROSS_COMPILE)g++
 LD ?= $(CROSS_COMPILE)ld
 AR ?= $(CROSS_COMPILE)ar
 AS ?= $(CROSS_COMPILE)as
-LDFLAGS = -L$(PREFIX)/lib -lSDL -lSDLmain -lSDL_image -lSDL_ttf $(MORE_LDS)
-CFLAGS = -g -std=c11 -Wall
-INCLUDES = -Iinclude -Ibuild -I$(PREFIX)/include
+
+SDL_PKGS = SDL_image SDL_ttf
+CFLAGS += -g -std=c11 -Wall \
+          -Iinclude -Ibuild \
+          $(shell pkg-config --cflags $(SDL_PKGS))
+LDFLAGS += $(shell pkg-config --libs $(SDL_PKGS))
 
 PROJECT_NAME=ChooseGoose
 PROJECT_SHORT=choosegoose
@@ -40,15 +41,26 @@ SRC_DIR = src
 SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
+HOME ?=$(shell echo $$HOME)
+INSTALL_LOCATION ?= $(HOME)/bin/$(PROJECT_SHORT)
+
 .PHONY: all
 all: compile_flags.txt docker-compile docker-compile-rg35xx rg-demos
+
+.PHONY: install
+install: $(TARGET)
+	cp $(TARGET) $(INSTALL_LOCATION)
 
 .PHONY: goose
 goose: $(TARGET)
 
 .PHONY: demo
 demo: $(TARGET)
-	ls -1 | ./$(TARGET) --title "It's a demo" --background-color FFFF00 --log-file /dev/stderr
+	ls -1 | ./$(TARGET) --title "It's a demo" --background-image=DEFAULT --log-file /dev/stderr
+
+.PHONY: app-demo
+app-demo: $(TARGET)
+	ls -1 /Applications | ./$(TARGET) --title "App Launcher" --hide-file-extensions=true --background-image=DEFAULT --log-file /dev/stderr | xargs -I{} open -a "{}"
 
 # Default clean task does not remove the font download because it's annoying
 # to download after every clean when it doesn't actaully change.
@@ -60,9 +72,11 @@ clean:
 		-exec rm -rf {} +
 
 compile_flags.txt: Makefile
-	# split C_FLAGS into lines
 	echo $(CFLAGS) | tr ' ' '\n' > $@
-	echo $(INCLUDES) | tr ' ' '\n' >> $@
+
+.PHONY: install-dependencies
+install-dependencies:
+	bash -l -c "$(DEPENDENCY_INSTALL_CMD)"
 
 ### Embedded background image #################################################
 
@@ -114,7 +128,7 @@ $(BUILD_DIR):
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJECTS): $(COMPILED_FONT) $(COMPILED_BG_IMAGE)
 

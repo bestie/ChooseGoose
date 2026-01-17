@@ -1,4 +1,4 @@
-#include <criterion/criterion.h>
+#include <criterion.h>
 #include "cli_opts.h"
 
 #define program_name "choosegoose"
