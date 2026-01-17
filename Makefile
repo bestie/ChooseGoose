@@ -40,8 +40,15 @@ SRC_DIR = src
 SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
+HOME ?=$(shell echo $$HOME)
+INSTALL_LOCATION ?= $(HOME)/bin/$(PROJECT_SHORT)
+
 .PHONY: all
 all: compile_flags.txt docker-compile docker-compile-rg35xx rg-demos
+
+.PHONY: install
+install: $(TARGET)
+	cp $(TARGET) $(INSTALL_LOCATION)
 
 .PHONY: goose
 goose: $(TARGET)
