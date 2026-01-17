@@ -37,6 +37,26 @@ State* global_state;
 FILE* log_file;
 char filter_query[128];
 
+SDL_Interface sdl = {
+    .init = SDL_Init,
+    .quit = SDL_Quit,
+    .set_video_mode = SDL_SetVideoMode,
+    .wm_set_caption = SDL_WM_SetCaption,
+    .enable_key_repeat = SDL_EnableKeyRepeat,
+    .get_ticks = SDL_GetTicks,
+    .poll_event = SDL_PollEvent,
+    .flip = SDL_Flip,
+    .fill_rect = SDL_FillRect,
+    .free_surface = SDL_FreeSurface,
+    .delay = SDL_Delay,
+    .blit_surface = SDL_BlitSurface,
+    .show_cursor = SDL_ShowCursor,
+    .num_joysticks = SDL_NumJoysticks,
+    .joystick_open = SDL_JoystickOpen,
+    .ttf_init = TTF_Init,
+    .ttf_rendertext_blended = TTF_RenderText_Blended,
+};
+
 char* str_lower(char* str) {
     char* lstr = malloc(strlen(str));
 
@@ -128,25 +148,6 @@ TTF_Font* load_font(char *font_filepath, int font_size) {
   }
 }
 
-SDL_Interface sdl = {
-    .init = SDL_Init,
-    .quit = SDL_Quit,
-    .set_video_mode = SDL_SetVideoMode,
-    .wm_set_caption = SDL_WM_SetCaption,
-    .enable_key_repeat = SDL_EnableKeyRepeat,
-    .get_ticks = SDL_GetTicks,
-    .poll_event = SDL_PollEvent,
-    .flip = SDL_Flip,
-    .fill_rect = SDL_FillRect,
-    .free_surface = SDL_FreeSurface,
-    .delay = SDL_Delay,
-    .blit_surface = SDL_BlitSurface,
-    .show_cursor = SDL_ShowCursor,
-    .num_joysticks = SDL_NumJoysticks,
-    .joystick_open = SDL_JoystickOpen,
-    .ttf_init = TTF_Init,
-};
-
 void set_sdl_interface(SDL_Interface* interface) {
   sdl = *interface;
 }
@@ -206,7 +207,7 @@ void timeout(int user_inactivity_timeout_ms) {
 SDL_Surface* create_text_surface(char *text, Color color, TTF_Font *font) {
   SDL_Color text_color = {color.r, color.g, color.b, SDL_UNUSED};
 
-  SDL_Surface *text_surface = TTF_RenderText_Blended(font, text, text_color);
+  SDL_Surface *text_surface = sdl.ttf_rendertext_blended(font, text, text_color);
   return text_surface;
 }
 

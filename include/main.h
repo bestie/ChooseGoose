@@ -29,7 +29,9 @@ typedef struct {
     char* (*joystick_name)(int device_index);
     SDL_Joystick* (*joystick_open)(int device_index);
     int (*ttf_init)(void);
+    SDL_Surface* (*ttf_rendertext_blended)(TTF_Font *font, const char *text, SDL_Color fg);
 } SDL_Interface;
+
 
 /*// Function to return the default implementation (real SDL functions)*/
 /*SDL_Interface get_real_sdl_interface(void);*/
