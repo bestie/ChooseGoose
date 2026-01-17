@@ -76,6 +76,9 @@ bool string_search(char* a, char* b) {
 }
 
 void cleanup(void) {
+    fflush(output);
+    fclose(output);
+
     /*cleanup_state(global_state);*/
     TTF_Quit();
     IMG_Quit();
@@ -310,8 +313,6 @@ void menu_confirm(State *state) {
     }
 
     fprintf(output, "%s\n", selection);
-    fflush(output);
-    fclose(output);
     quit(0);
 }
 

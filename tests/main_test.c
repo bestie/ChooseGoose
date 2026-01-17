@@ -265,8 +265,12 @@ void count_frame(void) {
     printf("🖼 rendered frame n = %d\n", frame_count);
 }
 
+void enqueue_input(SDL_Event event) {
+    input_q.events[input_q.count] = event;
+    input_q.count++;
+}
 
-Test(main_tests, test_init) {
+ConfigAndState* setup(void) {
     ConfigAndState* config_and_state = malloc(sizeof(ConfigAndState));
 
     Config* config = default_config();
@@ -283,11 +287,15 @@ Test(main_tests, test_init) {
 
     config_and_state->config = config;
     config_and_state->state = state;
+    return config_and_state;
+}
 
-    input_q.events[0] = INPUTS.down_arrow;
-    input_q.events[1] = INPUTS.down_arrow;
-    input_q.events[2] = INPUTS.enter_key;
-    input_q.count = 3;
+Test(main_tests, test_init) {
+    ConfigAndState* config_and_state = setup();
+
+    enqueue_input(INPUTS.down_arrow);
+    enqueue_input(INPUTS.down_arrow);
+    enqueue_input(INPUTS.enter_key);
 
     test_hooks.pre_tick = tick_tick_boom;
     test_hooks.on_frame = count_frame;
@@ -295,4 +303,18 @@ Test(main_tests, test_init) {
     start_app(config_and_state);
 
     cr_assert_str_eq(captured_stdout, "Item 2\n");
+}
+
+Test(main_tests, test_escape_quit) {
+    ConfigAndState* config_and_state = setup();
+
+    enqueue_input(INPUTS.down_arrow);
+    enqueue_input(INPUTS.esc_key);
+
+    test_hooks.pre_tick = tick_tick_boom;
+    test_hooks.on_frame = count_frame;
+
+    start_app(config_and_state);
+
+    cr_assert_str_eq(captured_stdout, "");
 }
