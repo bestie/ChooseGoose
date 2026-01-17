@@ -124,8 +124,7 @@ int mock_sdl_flip(SDL_Surface *screen) {
 
     frame_count++;
 
-    printf("FLIPPING OUT");
-    test_hooks.pre_tick();
+    test_hooks.on_frame();
     return 0;
 }
 
@@ -262,9 +261,8 @@ void tick_tick_boom(void) {
     printf("Tick tick %d 💣\n", tick_clock);
 }
 
-void count_frames(void) {
-    printf("🖼 rendered frame n = %d", frame_count);
-    exit(1);
+void count_frame(void) {
+    printf("🖼 rendered frame n = %d\n", frame_count);
 }
 
 
@@ -292,7 +290,7 @@ Test(main_tests, test_init) {
   input_q.count = 3;
 
   test_hooks.pre_tick = tick_tick_boom;
-  test_hooks.on_frame = count_frames;
+  test_hooks.on_frame = count_frame;
 
   start_app(config_and_state);
 
