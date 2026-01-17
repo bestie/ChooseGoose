@@ -35,7 +35,12 @@
 // limited use global state for signal handling and logging
 State* global_state;
 FILE* log_file;
+FILE* output;
 char filter_query[128];
+
+void set_output(FILE* outfile) {
+  output = outfile;
+}
 
 SDL_Interface sdl = {
     .init = SDL_Init,
@@ -304,7 +309,9 @@ void menu_confirm(State *state) {
     return;
   }
 
-  fprintf(stdout, "%s\n", filtered_menu_items(state->menu_items, filter_query)->lines[state->selected_index]);
+  fprintf(output, "%s\n", selection);
+  fflush(output);
+  fclose(output);
   quit(0);
 }
 
@@ -682,6 +689,8 @@ void event_loop(Config* config, State* state) {
 
 void goose_setup(Config* config, State *state) {
   set_log_target_by_filepath(config->log_filepath);
+
+  set_output(stdout);
 
   log_event("HONK HONK");
   log_event("Setting starting selection to %d", config->start_at_nth - 1);

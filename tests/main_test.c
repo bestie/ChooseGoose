@@ -234,14 +234,27 @@ typedef struct ConfigAndState {
   State* state;
 } ConfigAndState;
 
+char captured_stdout[255];
+
 void* start_app(void* arg) {
   ConfigAndState* config_and_state = arg;
   Config* config = config_and_state->config;
   State* state = config_and_state->state;
 
   goose_setup(config, state);
+
+  int pipefd[2];
+  pipe(pipefd);
+  set_output(fdopen(pipefd[1], "w"));
+
   event_loop(config, state);
   cleanup();
+
+  FILE* pipe_read = fdopen(pipefd[0], "r");
+
+  fgets(captured_stdout, sizeof(captured_stdout), pipe_read);
+  printf("buf baby = %s\n", captured_stdout);
+
   return NULL;
 }
 
@@ -282,5 +295,6 @@ Test(main_tests, test_init) {
   test_hooks.on_frame = count_frames;
 
   start_app(config_and_state);
-  cr_assert(false);
+
+  cr_assert_str_eq(captured_stdout, "Item 2\n");
 }

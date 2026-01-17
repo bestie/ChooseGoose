@@ -44,5 +44,6 @@ void event_loop(Config *config, State *state);
 void set_log_file_pointer(FILE* file);
 void set_sdl_interface(SDL_Interface* interface);
 SDL_Interface* get_sdl_interface(void);
+void set_output(FILE*);
 
 #endif
