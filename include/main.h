@@ -14,7 +14,6 @@ typedef struct {
     int (*init)(Uint32 flags);
     void (*quit)(void);
     SDL_Surface* (*set_video_mode)(int w, int h, int bpp, Uint32 flags);
-    void (*wm_set_caption)(const char *title, const char *icon);
     int (*enable_key_repeat)(int delay, int interval);
     Uint32 (*get_ticks)(void);
     int (*poll_event)(SDL_Event *event);

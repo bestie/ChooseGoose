@@ -46,7 +46,6 @@ SDL_Interface sdl = {
     .init = SDL_Init,
     .quit = SDL_Quit,
     .set_video_mode = SDL_SetVideoMode,
-    .wm_set_caption = SDL_WM_SetCaption,
     .enable_key_repeat = SDL_EnableKeyRepeat,
     .get_ticks = SDL_GetTicks,
     .poll_event = SDL_PollEvent,
@@ -173,13 +172,12 @@ void init_sdl(Config* config, State* state) {
 
     log_event("Configuring SDL");
     sdl.show_cursor(SDL_DISABLE);
-    sdl.wm_set_caption(config->title, NULL);
     sdl.enable_key_repeat(config->key_repeat_delay_ms, config->key_repeat_interval_ms);
 
     log_event("SDL_SetVideoMode(SCREEN_WIDTH=%d, SCREEN_HEIGHT=%d, bpp=%d)",
               config->screen_width, config->screen_height, config->bits_per_pixel);
     state->screen = sdl.set_video_mode(config->screen_width, config->screen_height,
-                                       config->bits_per_pixel, SDL_SWSURFACE);
+                                       config->bits_per_pixel, SDL_SWSURFACE | SDL_NOFRAME);
 
     log_event("Looking for joysticks");
     if (sdl.num_joysticks() > 0) {
@@ -439,6 +437,9 @@ int handle_input(State* state, SDL_Event event) {
         case SDL_KEYDOWN:
             handle_key_press(state, event);
             break;
+        case SDL_QUIT:
+            quit(1);
+            return 0;
         default:
             event_handled = 0;
     }

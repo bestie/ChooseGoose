@@ -83,8 +83,8 @@ BunchOfLines* read_lines_from_stdin(int max_lines, int max_line_length) {
     int lines_i = 0;
     int result = check_readable(stdin, 100);
     if (result < 1) {
-        fprintf(stderr, "Input not readable");
-        return bunch;
+        fprintf(stderr, "Input not readable\n");
+        exit(1);
     }
 
     while (lines_i < max_lines && fgets(lines[lines_i], max_line_length, stdin)) {

@@ -24,10 +24,6 @@ SDL_Surface* mock_sdl_set_video_mode(int w, int h, int bpp, Uint32 flags) {
     return NULL;
 }
 
-void mock_sdl_wm_set_caption(const char *title, const char *icon) {
-    printf("Mock SDL_WM_SetCaption called: %s\n", title);
-}
-
 int mock_sdl_enable_key_repeat(int delay, int interval) {
     printf("Mock SDL_EnableKeyRepeat called\n");
     return 0;
@@ -193,7 +189,6 @@ SDL_Interface* get_mock_sdl_interface(void) {
     interface->init = mock_sdl_init;
     interface->quit = mock_sdl_quit;
     interface->set_video_mode = mock_sdl_set_video_mode;
-    interface->wm_set_caption = mock_sdl_wm_set_caption;
     interface->enable_key_repeat = mock_sdl_enable_key_repeat;
     interface->poll_event = mock_sdl_poll_event;
     interface->get_ticks = mock_sdl_get_ticks;
