@@ -48,7 +48,11 @@ goose: $(TARGET)
 
 .PHONY: demo
 demo: $(TARGET)
-	ls -1 | ./$(TARGET) --title "It's a demo" --background-color FFFF00 --log-file /dev/stderr
+	ls -1 | ./$(TARGET) --title "It's a demo" --background-image=DEFAULT --log-file /dev/stderr
+
+.PHONY: app-demo
+app-demo: $(TARGET)
+	ls -1 /Applications | ./$(TARGET) --title "App Launcher" --hide-file-extensions=true --background-image=DEFAULT --log-file /dev/stderr | xargs -I{} open -a "{}"
 
 # Default clean task does not remove the font download because it's annoying
 # to download after every clean when it doesn't actaully change.

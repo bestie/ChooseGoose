@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "main.h"
 #include "background_image.c"
@@ -34,6 +35,20 @@
 // limited use global state for signal handling and logging
 State* global_state;
 FILE* log_file;
+char filter_query[128];
+
+char* str_lower(char* str) {
+    char* lstr = malloc(strlen(str));
+
+    for(int i=0; i < strlen(str); i++) {
+        lstr[i] = tolower(str[i]);
+    }
+    return lstr;
+}
+
+bool string_search(char* a, char* b) {
+  return strstr(str_lower(a), str_lower(b)) != NULL;
+}
 
 void cleanup(void) {
   /*cleanup_state(global_state);*/
@@ -230,9 +245,31 @@ SDL_Surface** create_menu_item(Config* config, State* state, char *text, int sel
   return menu_item;
 }
 
+BunchOfLines* filtered_menu_items(BunchOfLines* menu_items, char* filter_query) {
+  if(strlen(filter_query) == 0) {
+    return menu_items;
+  }
+
+  BunchOfLines* filtered_items = malloc(sizeof(BunchOfLines));
+  filtered_items->count = 0;
+  filtered_items->max_length = menu_items->max_length;
+  filtered_items->lines = malloc(sizeof(char*) * menu_items->count);
+
+  for(int i = 0; i < menu_items->count; i++) {
+    if(string_search(menu_items->lines[i], filter_query)) {
+      filtered_items->lines[filtered_items->count] = menu_items->lines[i];
+      filtered_items->count += 1;
+    }
+  }
+
+  log_event("Filtered menu items with query `%s`: %d/%d items", filter_query, filtered_items->count, menu_items->count);
+
+  return filtered_items;
+}
 
 void menu_move_selection(State* state, int increment, int cycle) {
-  BunchOfLines* menu_items = state->menu_items;
+  //BunchOfLines* menu_items = state->menu_items;
+  BunchOfLines* menu_items = filtered_menu_items(state->menu_items, filter_query);
 
   int from = state->selected_index;
   state->selected_index = state->selected_index + increment;
@@ -253,9 +290,18 @@ void menu_move_selection(State* state, int increment, int cycle) {
 }
 
 void menu_confirm(State *state) {
+  char* selection = filtered_menu_items(state->menu_items, filter_query)->lines[state->selected_index];
+
   log_event("Selection confirmed item=%d/%d - `%s`", state->selected_index,
-            state->menu_items->count, state->menu_items->lines[state->selected_index]);
-  fprintf(stdout, "%s\n", state->menu_items->lines[state->selected_index]);
+            state->menu_items->count, selection);
+
+
+  if(selection == NULL) {
+    log_event("Selection was null exit 1");
+    quit(1);
+  }
+
+  fprintf(stdout, "%s\n", filtered_menu_items(state->menu_items, filter_query)->lines[state->selected_index]);
   quit(0);
 }
 
@@ -306,6 +352,29 @@ void handle_joypad_button(State* state, SDL_JoyButtonEvent event) {
   }
 }
 
+void modify_filter_query(State* state, int key_sym) {
+  int len = strlen(filter_query);
+
+  state->selected_index = 0;
+
+  // Handle backspace
+  if (key_sym == SDLK_BACKSPACE && len > 0) {
+    log_event("modify_filter_query: backspace");
+    filter_query[len - 1] = '\0';
+    log_event("Filter query modified: `%s`", filter_query);
+    return;
+  }
+
+  if (len < sizeof(filter_query) - 1) {
+    log_event("modify_filter_query: with char `%c` to filter query", (char)key_sym);
+    filter_query[len] = (char)key_sym;
+    filter_query[len + 1] = '\0';
+    log_event("Filter query modified: `%s`", filter_query);
+    return;
+  }
+
+}
+
 void handle_key_press(State* state, SDL_Event event) {
   log_event("Keyboard keypress: value: %d", event.key.keysym.sym);
   switch (event.key.keysym.sym) {
@@ -326,6 +395,18 @@ void handle_key_press(State* state, SDL_Event event) {
     break;
   case SDLK_ESCAPE:
     quit(0);
+    break;
+  case SDLK_a ... SDLK_z:
+  case SDLK_0 ... SDLK_9:
+  case SDLK_SPACE:
+  case SDLK_MINUS:
+  case SDLK_UNDERSCORE:
+  case SDLK_PERIOD:
+  case SDLK_COMMA:
+  case SDLK_SLASH:
+  case SDLK_BACKSLASH:
+  case SDLK_BACKSPACE:
+    modify_filter_query(state, event.key.keysym.sym);
     break;
   default:
     break;
@@ -363,7 +444,8 @@ void render_cover_image(Config* config, State* state) {
     return;
   }
 
-  char* selected_item = state->menu_items->lines[state->selected_index];
+  //char* selected_item = state->menu_items->lines[state->selected_index];
+char* selected_item = filtered_menu_items(state->menu_items, filter_query)->lines[state->selected_index];
 
   char* filename = malloc(sizeof(char) * 255);
   char* filepath = malloc(sizeof(char) * 255);
@@ -387,7 +469,9 @@ void render_cover_image(Config* config, State* state) {
 }
 
 void render(Config* config, State* state) {
-  BunchOfLines* menu_items = state->menu_items;
+  BunchOfLines* menu_items = filtered_menu_items(state->menu_items, filter_query);
+  int menu_max_items = state->menu_max_items;
+  int filter_text_height = 0;
 
   SDL_FillRect(state->screen, NULL, state->background_color);
   SDL_Surface* background_image = state->background_image;
@@ -402,10 +486,22 @@ void render(Config* config, State* state) {
     SDL_BlitSurface(state->title, NULL, state->screen, &dest);
   }
 
-  int menu_y_offset = config->top_padding + state->title_height + config->menu_item_margin;
+  if (strlen(filter_query) > 0) {
+    char filter_text[255];
+    sprintf(filter_text, " > %s_", filter_query);
+    SDL_Surface* filter_surface = create_text_surface(filter_text, config->text_color, state->font);
+    SDL_Rect dest = {config->left_padding, config->top_padding + state->title_height, 0, 0};
+    SDL_BlitSurface(filter_surface, NULL, state->screen, &dest);
+    sdl.free_surface(filter_surface);
 
-  int default_items_above = state->menu_max_items / 2;
-  int default_items_below = state->menu_max_items - default_items_above - 1;
+    filter_text_height = state->menu_item_height;
+    menu_max_items -= 1;
+  }
+
+  int menu_y_offset = config->top_padding + state->title_height + config->menu_item_margin + filter_text_height;
+
+  int default_items_above = menu_max_items / 2;
+  int default_items_below = menu_max_items - default_items_above - 1;
 
   int visible_menu_start = state->selected_index - default_items_above;
   int visible_menu_end = state->selected_index + default_items_below;
@@ -413,13 +509,13 @@ void render(Config* config, State* state) {
   // Not enough items above cursor, lock window to top of list
   if (visible_menu_start < 0) {
     visible_menu_start = 0;
-    visible_menu_end = visible_menu_start + state->menu_max_items - 1;
+    visible_menu_end = visible_menu_start + menu_max_items - 1;
   }
 
   // Not enough items below cursor lock window to bottom of list
   if (visible_menu_end > menu_items->count - 1) {
     visible_menu_end = menu_items->count - 1;
-    visible_menu_start = visible_menu_end - state->menu_max_items + 1;
+    visible_menu_start = visible_menu_end - menu_max_items + 1;
   }
 
   // Final constraint check that neither are out of bounds
@@ -433,8 +529,9 @@ void render(Config* config, State* state) {
   log_event("Rendering item range %d-%d", visible_menu_start, visible_menu_end);
 
   int menu_index = 0;
+  int items_render_count = visible_menu_end - visible_menu_start + 1;
 
-  for (int i = 0; i < state->menu_max_items; i++) {
+  for (int i = 0; i < items_render_count; i++) {
     if (visible_menu_end - visible_menu_end > i) {
       log_event("Done rendering items %d", i);
       break;
