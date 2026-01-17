@@ -92,7 +92,7 @@ static const InputValues INPUTS = {
         .key = { .type = SDL_KEYDOWN, .keysym = { .sym = SDLK_RIGHT } }
     },
     .enter_key = {
-       .key = { .type = SDL_KEYDOWN, .keysym = { .sym = SDLK_RETURN } }
+        .key = { .type = SDL_KEYDOWN, .keysym = { .sym = SDLK_RETURN } }
     },
     .esc_key = {
         .key = { .type = SDL_KEYDOWN, .keysym = { .sym = SDLK_ESCAPE } }
@@ -188,73 +188,73 @@ SDL_Surface* mock_ttf_rendertext_blended(TTF_Font *font, const char *text, SDL_C
 }
 
 SDL_Interface* get_mock_sdl_interface(void) {
-  SDL_Interface* interface = malloc(sizeof(SDL_Interface));
+    SDL_Interface* interface = malloc(sizeof(SDL_Interface));
 
-  interface->init = mock_sdl_init;
-  interface->quit = mock_sdl_quit;
-  interface->set_video_mode = mock_sdl_set_video_mode;
-  interface->wm_set_caption = mock_sdl_wm_set_caption;
-  interface->enable_key_repeat = mock_sdl_enable_key_repeat;
-  interface->poll_event = mock_sdl_poll_event;
-  interface->get_ticks = mock_sdl_get_ticks;
-  interface->flip = mock_sdl_flip;
-  interface->fill_rect = mock_sdl_fill_rect;
-  interface->free_surface = mock_sdl_free_surface;
-  interface->delay = mock_sdl_delay;
-  interface->blit_surface = mock_sdl_blit_surface;
-  interface->show_cursor = mock_sdl_show_cursor;
-  interface->num_joysticks = mock_sdl_num_joysticks;
-  interface->get_error = mock_sdl_get_error;
-  interface->joystick_name = mock_sdl_joystick_name;
-  interface->joystick_open = mock_sdl_joystick_open;
-  interface->ttf_init = mock_sdl_ttf_init;
-  interface->ttf_rendertext_blended = mock_ttf_rendertext_blended;
+    interface->init = mock_sdl_init;
+    interface->quit = mock_sdl_quit;
+    interface->set_video_mode = mock_sdl_set_video_mode;
+    interface->wm_set_caption = mock_sdl_wm_set_caption;
+    interface->enable_key_repeat = mock_sdl_enable_key_repeat;
+    interface->poll_event = mock_sdl_poll_event;
+    interface->get_ticks = mock_sdl_get_ticks;
+    interface->flip = mock_sdl_flip;
+    interface->fill_rect = mock_sdl_fill_rect;
+    interface->free_surface = mock_sdl_free_surface;
+    interface->delay = mock_sdl_delay;
+    interface->blit_surface = mock_sdl_blit_surface;
+    interface->show_cursor = mock_sdl_show_cursor;
+    interface->num_joysticks = mock_sdl_num_joysticks;
+    interface->get_error = mock_sdl_get_error;
+    interface->joystick_name = mock_sdl_joystick_name;
+    interface->joystick_open = mock_sdl_joystick_open;
+    interface->ttf_init = mock_sdl_ttf_init;
+    interface->ttf_rendertext_blended = mock_ttf_rendertext_blended;
 
-  return interface;
+    return interface;
 }
 
 void generate_test_menu_items(State* state, int item_count) {
-  state->menu_items = malloc(sizeof(BunchOfLines));
-  state->menu_items->max_length = 255;
+    state->menu_items = malloc(sizeof(BunchOfLines));
+    state->menu_items->max_length = 255;
 
-  state->menu_items->count = item_count;
-  state->menu_items->lines = malloc(sizeof(char*) * item_count);
+    state->menu_items->count = item_count;
+    state->menu_items->lines = malloc(sizeof(char*) * item_count);
 
-  for(int i=0; i < item_count; i++) { 
-      char* str = malloc(sizeof(char*) * state->menu_items->max_length);
-     sprintf(str, "Item %d", i);
-      state->menu_items->lines[i] = str;
-  }
+    for(int i=0; i < item_count; i++) { 
+        char* str = malloc(sizeof(char*) * state->menu_items->max_length);
+        sprintf(str, "Item %d", i);
+        state->menu_items->lines[i] = str;
+    }
 }
 
 // Config and state struct
 typedef struct ConfigAndState {
-  Config* config;
-  State* state;
+    Config* config;
+    State* state;
 } ConfigAndState;
 
 char captured_stdout[255];
 
 void* start_app(void* arg) {
-  ConfigAndState* config_and_state = arg;
-  Config* config = config_and_state->config;
-  State* state = config_and_state->state;
+    ConfigAndState* config_and_state = arg;
+    Config* config = config_and_state->config;
+    State* state = config_and_state->state;
 
-  goose_setup(config, state);
+    goose_setup(config, state);
 
-  int pipefd[2];
-  pipe(pipefd);
-  set_output(fdopen(pipefd[1], "w"));
+    int pipefd[2];
+    pipe(pipefd);
+    set_output(fdopen(pipefd[1], "w"));
 
-  event_loop(config, state);
-  cleanup();
+    event_loop(config, state);
+    cleanup();
 
-  FILE* pipe_read = fdopen(pipefd[0], "r");
+    FILE* pipe_read = fdopen(pipefd[0], "r");
 
-  fgets(captured_stdout, sizeof(captured_stdout), pipe_read);
-  printf("buf baby = %s\n", captured_stdout);
+    fgets(captured_stdout, sizeof(captured_stdout), pipe_read);
+    printf("buf baby = %s\n", captured_stdout);
 
-  return NULL;
+    return NULL;
 }
 
 void tick_tick_boom(void) {
@@ -267,32 +267,32 @@ void count_frame(void) {
 
 
 Test(main_tests, test_init) {
-  ConfigAndState* config_and_state = malloc(sizeof(ConfigAndState));
+    ConfigAndState* config_and_state = malloc(sizeof(ConfigAndState));
 
-  Config* config = default_config();
-  config->user_inactivity_timeout_ms = 2000;
-  State* state = init_state();
-  generate_test_menu_items(state, 20);
-  set_log_file_pointer(stderr);
+    Config* config = default_config();
+    config->user_inactivity_timeout_ms = 2000;
+    State* state = init_state();
+    generate_test_menu_items(state, 20);
+    set_log_file_pointer(stderr);
 
-  SDL_Interface* sdl = get_sdl_interface();
-  SDL_Interface* mock_sdl = get_mock_sdl_interface();
-  sdl->poll_event = mock_sdl->poll_event;
-  sdl->get_ticks = mock_sdl->get_ticks;
-  sdl->flip = mock_sdl->flip;
+    SDL_Interface* sdl = get_sdl_interface();
+    SDL_Interface* mock_sdl = get_mock_sdl_interface();
+    sdl->poll_event = mock_sdl->poll_event;
+    sdl->get_ticks = mock_sdl->get_ticks;
+    sdl->flip = mock_sdl->flip;
 
-  config_and_state->config = config;
-  config_and_state->state = state;
+    config_and_state->config = config;
+    config_and_state->state = state;
 
-  input_q.events[0] = INPUTS.down_arrow;
-  input_q.events[1] = INPUTS.down_arrow;
-  input_q.events[2] = INPUTS.enter_key;
-  input_q.count = 3;
+    input_q.events[0] = INPUTS.down_arrow;
+    input_q.events[1] = INPUTS.down_arrow;
+    input_q.events[2] = INPUTS.enter_key;
+    input_q.count = 3;
 
-  test_hooks.pre_tick = tick_tick_boom;
-  test_hooks.on_frame = count_frame;
+    test_hooks.pre_tick = tick_tick_boom;
+    test_hooks.on_frame = count_frame;
 
-  start_app(config_and_state);
+    start_app(config_and_state);
 
-  cr_assert_str_eq(captured_stdout, "Item 2\n");
+    cr_assert_str_eq(captured_stdout, "Item 2\n");
 }

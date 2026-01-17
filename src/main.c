@@ -39,7 +39,7 @@ FILE* output;
 char filter_query[128];
 
 void set_output(FILE* outfile) {
-  output = outfile;
+    output = outfile;
 }
 
 SDL_Interface sdl = {
@@ -72,669 +72,669 @@ char* str_lower(char* str) {
 }
 
 bool string_search(char* a, char* b) {
-  return strstr(str_lower(a), str_lower(b)) != NULL;
+    return strstr(str_lower(a), str_lower(b)) != NULL;
 }
 
 void cleanup(void) {
-  /*cleanup_state(global_state);*/
-  TTF_Quit();
-  IMG_Quit();
-  SDL_Quit();
+    /*cleanup_state(global_state);*/
+    TTF_Quit();
+    IMG_Quit();
+    SDL_Quit();
 }
 
 static int exit_code = -1;
 void quit(int code) {
-  exit_code = code;
+    exit_code = code;
 }
 
 void terminate_at_file_extension(char *filename) {
-  char *dot = strrchr(filename, '.');
-  if (dot) {
-    *dot = '\0';
-  }
+    char *dot = strrchr(filename, '.');
+    if (dot) {
+        *dot = '\0';
+    }
 }
 
 void set_log_target_by_filepath(char log_filepath[]) {
-  if (strlen(log_filepath) == 0) {
-    return;
-  }
+    if (strlen(log_filepath) == 0) {
+        return;
+    }
 
-  if (strcmp(log_filepath, "stderr") == 0) {
-    log_file = stderr;
-  } else if (strcmp(log_filepath, "stdout") == 0) {
-    log_file = stdout;
-  } else {
-    log_file = fopen(log_filepath, "a");
-  }
+    if (strcmp(log_filepath, "stderr") == 0) {
+        log_file = stderr;
+    } else if (strcmp(log_filepath, "stdout") == 0) {
+        log_file = stdout;
+    } else {
+        log_file = fopen(log_filepath, "a");
+    }
 
-  if (!log_file) {
-    fprintf(stderr, "Unable to open log file `%s`\n", log_filepath);
-  }
+    if (!log_file) {
+        fprintf(stderr, "Unable to open log file `%s`\n", log_filepath);
+    }
 }
 
 void set_log_file_pointer(FILE* file) {
-  log_file = file;
+    log_file = file;
 }
 
 void log_event(const char *format, ...) {
-  if (!log_file) {
-    return;
-  }
+    if (!log_file) {
+        return;
+    }
 
-  char message[255];
-  time_t current_time;
-  struct tm *time_data;
-  char time_buffer[20];
+    char message[255];
+    time_t current_time;
+    struct tm *time_data;
+    char time_buffer[20];
 
-  time(&current_time);
-  time_data = localtime(&current_time);
-  strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", time_data);
+    time(&current_time);
+    time_data = localtime(&current_time);
+    strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", time_data);
 
-  va_list args;
-  va_start(args, format);
-  vsprintf(message, format, args);
-  va_end(args);
+    va_list args;
+    va_start(args, format);
+    vsprintf(message, format, args);
+    va_end(args);
 
-  pid_t processID = getpid();
+    pid_t processID = getpid();
 
-  fprintf(log_file, "[%s][PID: %d] %s\n", time_buffer, processID, message);
-  fflush(log_file);
+    fprintf(log_file, "[%s][PID: %d] %s\n", time_buffer, processID, message);
+    fflush(log_file);
 }
 
 TTF_Font* load_font(char *font_filepath, int font_size) {
-  if (strlen(font_filepath) > 1 && access(font_filepath, R_OK) != -1) {
-    log_event("Font loading from %s", font_filepath);
-    return TTF_OpenFont(font_filepath, font_size);
-  } else {
-    log_event("Font file not set or not readable `%s`", font_filepath);
-    SDL_RWops *rw = SDL_RWFromMem(default_font, default_font_len);
-    return TTF_OpenFontRW(rw, 1, font_size);
-  }
+    if (strlen(font_filepath) > 1 && access(font_filepath, R_OK) != -1) {
+        log_event("Font loading from %s", font_filepath);
+        return TTF_OpenFont(font_filepath, font_size);
+    } else {
+        log_event("Font file not set or not readable `%s`", font_filepath);
+        SDL_RWops *rw = SDL_RWFromMem(default_font, default_font_len);
+        return TTF_OpenFontRW(rw, 1, font_size);
+    }
 }
 
 void set_sdl_interface(SDL_Interface* interface) {
-  sdl = *interface;
+    sdl = *interface;
 }
 
 SDL_Interface* get_sdl_interface(void) {
-  return &sdl;
+    return &sdl;
 }
 
 void init_sdl(Config* config, State* state) {
-  log_event("SDL initialization started.");
-  if (sdl.init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
-    log_event("Unable to init SDL: %s\n", SDL_GetError());
-    quit(1);
-    return;
-  }
-
-  log_event("Configuring SDL");
-  sdl.show_cursor(SDL_DISABLE);
-  sdl.wm_set_caption(config->title, NULL);
-  sdl.enable_key_repeat(config->key_repeat_delay_ms, config->key_repeat_interval_ms);
-
-  log_event("SDL_SetVideoMode(SCREEN_WIDTH=%d, SCREEN_HEIGHT=%d, bpp=%d)",
-            config->screen_width, config->screen_height, config->bits_per_pixel);
-  state->screen = sdl.set_video_mode(config->screen_width, config->screen_height,
-                            config->bits_per_pixel, SDL_SWSURFACE);
-
-  log_event("Looking for joysticks");
-  if (sdl.num_joysticks() > 0) {
-    state->joystick = sdl.joystick_open(0);
-    if (state->joystick == NULL) {
-      log_event("Unable to open joystick: %s\n", sdl.get_error());
-      quit(1);
-      return;
-    } else {
-      log_event("Joystick opened: %s\n", SDL_JoystickName(0));
+    log_event("SDL initialization started.");
+    if (sdl.init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
+        log_event("Unable to init SDL: %s\n", SDL_GetError());
+        quit(1);
+        return;
     }
-  } else {
-    log_event("No joysticks found");
-  }
 
-  log_event("Loading fonts");
-  sdl.ttf_init();
-  state->title_font = load_font(config->font_filepath, config->title_font_size);
-  state->font = load_font(config->font_filepath, config->font_size);
+    log_event("Configuring SDL");
+    sdl.show_cursor(SDL_DISABLE);
+    sdl.wm_set_caption(config->title, NULL);
+    sdl.enable_key_repeat(config->key_repeat_delay_ms, config->key_repeat_interval_ms);
 
-  state->font_pixel_height = TTF_FontHeight(state->font);
+    log_event("SDL_SetVideoMode(SCREEN_WIDTH=%d, SCREEN_HEIGHT=%d, bpp=%d)",
+              config->screen_width, config->screen_height, config->bits_per_pixel);
+    state->screen = sdl.set_video_mode(config->screen_width, config->screen_height,
+                                       config->bits_per_pixel, SDL_SWSURFACE);
 
-  log_event("Font loaded size=%d, font_height=%dpx", config->font_size,
-            state->font_pixel_height);
+    log_event("Looking for joysticks");
+    if (sdl.num_joysticks() > 0) {
+        state->joystick = sdl.joystick_open(0);
+        if (state->joystick == NULL) {
+            log_event("Unable to open joystick: %s\n", sdl.get_error());
+            quit(1);
+            return;
+        } else {
+            log_event("Joystick opened: %s\n", SDL_JoystickName(0));
+        }
+    } else {
+        log_event("No joysticks found");
+    }
+
+    log_event("Loading fonts");
+    sdl.ttf_init();
+    state->title_font = load_font(config->font_filepath, config->title_font_size);
+    state->font = load_font(config->font_filepath, config->font_size);
+
+    state->font_pixel_height = TTF_FontHeight(state->font);
+
+    log_event("Font loaded size=%d, font_height=%dpx", config->font_size,
+              state->font_pixel_height);
 
 }
 
 void timeout(int user_inactivity_timeout_ms) {
-  log_event("Inactivity timeout reached - %ds", user_inactivity_timeout_ms / 1000);
-  cleanup();
-  quit(124);
+    log_event("Inactivity timeout reached - %ds", user_inactivity_timeout_ms / 1000);
+    cleanup();
+    quit(124);
 }
 
 SDL_Surface* create_text_surface(char *text, Color color, TTF_Font *font) {
-  SDL_Color text_color = {color.r, color.g, color.b, SDL_UNUSED};
+    SDL_Color text_color = {color.r, color.g, color.b, SDL_UNUSED};
 
-  SDL_Surface *text_surface = sdl.ttf_rendertext_blended(font, text, text_color);
-  return text_surface;
+    SDL_Surface *text_surface = sdl.ttf_rendertext_blended(font, text, text_color);
+    return text_surface;
 }
 
 SDL_Surface** create_menu_item(Config* config, State* state, char *text, int selected) {
-  Color text_color;
+    Color text_color;
 
-  if (selected) {
-    text_color = config->text_selected_color;
-  } else {
-    text_color = config->text_color;
-  }
+    if (selected) {
+        text_color = config->text_selected_color;
+    } else {
+        text_color = config->text_color;
+    }
 
-  SDL_Surface* text_surface = create_text_surface(text, text_color, state->font);
-  // Can't decide if the menu item with background color should fill the whole
-  // screen width or just the width of the text
-  /*int menu_item_width = config->screen_width - (config->left_padding + config->right_padding);*/
-  int menu_item_width = text_surface->w + config->menu_item_padding * 2;
-  int menu_item_height = state->font_pixel_height + config->menu_item_padding * 2;
-  SDL_Surface* text_bg_surface;
+    SDL_Surface* text_surface = create_text_surface(text, text_color, state->font);
+    // Can't decide if the menu item with background color should fill the whole
+    // screen width or just the width of the text
+    /*int menu_item_width = config->screen_width - (config->left_padding + config->right_padding);*/
+    int menu_item_width = text_surface->w + config->menu_item_padding * 2;
+    int menu_item_height = state->font_pixel_height + config->menu_item_padding * 2;
+    SDL_Surface* text_bg_surface;
 
-  if (selected && config->text_selected_background_color.r > -1) {
-    text_bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, menu_item_width, menu_item_height, config->bits_per_pixel, 0,0,0,0);
-    Color bg = config->text_selected_background_color;
-    Uint32 sdl_bg_color = SDL_MapRGB(state->screen->format, bg.r, bg.g, bg.b);
-    SDL_Rect fillRect = { 0, 0, text_bg_surface->w, text_bg_surface->h };
-    SDL_FillRect(text_bg_surface, &fillRect, sdl_bg_color);
-  } else {
-    // Surface of size zero so two surfaces are always returned
-    text_bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, 0, 0, config->bits_per_pixel, 0,0,0,0);
-  }
+    if (selected && config->text_selected_background_color.r > -1) {
+        text_bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, menu_item_width, menu_item_height, config->bits_per_pixel, 0,0,0,0);
+        Color bg = config->text_selected_background_color;
+        Uint32 sdl_bg_color = SDL_MapRGB(state->screen->format, bg.r, bg.g, bg.b);
+        SDL_Rect fillRect = { 0, 0, text_bg_surface->w, text_bg_surface->h };
+        SDL_FillRect(text_bg_surface, &fillRect, sdl_bg_color);
+    } else {
+        // Surface of size zero so two surfaces are always returned
+        text_bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, 0, 0, config->bits_per_pixel, 0,0,0,0);
+    }
 
-  SDL_Surface** menu_item = malloc(sizeof(SDL_Surface*) * 2);
-  menu_item[0] = text_bg_surface;
-  menu_item[1] = text_surface;
+    SDL_Surface** menu_item = malloc(sizeof(SDL_Surface*) * 2);
+    menu_item[0] = text_bg_surface;
+    menu_item[1] = text_surface;
 
-  return menu_item;
+    return menu_item;
 }
 
 BunchOfLines* filtered_menu_items(BunchOfLines* menu_items, char* filter_query) {
-  if(strlen(filter_query) == 0) {
-    return menu_items;
-  }
-
-  BunchOfLines* filtered_items = malloc(sizeof(BunchOfLines));
-  filtered_items->count = 0;
-  filtered_items->max_length = menu_items->max_length;
-  filtered_items->lines = malloc(sizeof(char*) * menu_items->count);
-
-  for(int i = 0; i < menu_items->count; i++) {
-    if(string_search(menu_items->lines[i], filter_query)) {
-      filtered_items->lines[filtered_items->count] = menu_items->lines[i];
-      filtered_items->count += 1;
+    if(strlen(filter_query) == 0) {
+        return menu_items;
     }
-  }
 
-  log_event("Filtered menu items with query `%s`: %d/%d items", filter_query, filtered_items->count, menu_items->count);
+    BunchOfLines* filtered_items = malloc(sizeof(BunchOfLines));
+    filtered_items->count = 0;
+    filtered_items->max_length = menu_items->max_length;
+    filtered_items->lines = malloc(sizeof(char*) * menu_items->count);
 
-  return filtered_items;
+    for(int i = 0; i < menu_items->count; i++) {
+        if(string_search(menu_items->lines[i], filter_query)) {
+            filtered_items->lines[filtered_items->count] = menu_items->lines[i];
+            filtered_items->count += 1;
+        }
+    }
+
+    log_event("Filtered menu items with query `%s`: %d/%d items", filter_query, filtered_items->count, menu_items->count);
+
+    return filtered_items;
 }
 
 void menu_move_selection(State* state, int increment, int cycle) {
-  //BunchOfLines* menu_items = state->menu_items;
-  BunchOfLines* menu_items = filtered_menu_items(state->menu_items, filter_query);
+    //BunchOfLines* menu_items = state->menu_items;
+    BunchOfLines* menu_items = filtered_menu_items(state->menu_items, filter_query);
 
-  int from = state->selected_index;
-  state->selected_index = state->selected_index + increment;
-  if (cycle) {
-    state->selected_index = state->selected_index % menu_items->count;
-    if (state->selected_index < 0) {
-      state->selected_index = menu_items->count - 1;
+    int from = state->selected_index;
+    state->selected_index = state->selected_index + increment;
+    if (cycle) {
+        state->selected_index = state->selected_index % menu_items->count;
+        if (state->selected_index < 0) {
+            state->selected_index = menu_items->count - 1;
+        }
     }
-  }
 
-  if (state->selected_index < 0) {
-    state->selected_index = 0;
-  } else if (state->selected_index > menu_items->count) {
-    state->selected_index = menu_items->count - 1;
-  }
+    if (state->selected_index < 0) {
+        state->selected_index = 0;
+    } else if (state->selected_index > menu_items->count) {
+        state->selected_index = menu_items->count - 1;
+    }
 
-  log_event("Moved to from %d to %d", from, state->selected_index);
+    log_event("Moved to from %d to %d", from, state->selected_index);
 }
 
 void menu_confirm(State *state) {
-  char* selection = filtered_menu_items(state->menu_items, filter_query)->lines[state->selected_index];
+    char* selection = filtered_menu_items(state->menu_items, filter_query)->lines[state->selected_index];
 
-  log_event("Selection confirmed item=%d/%d - `%s`", state->selected_index,
-            state->menu_items->count, selection);
+    log_event("Selection confirmed item=%d/%d - `%s`", state->selected_index,
+              state->menu_items->count, selection);
 
 
-  if(selection == NULL) {
-    log_event("Selection was null exit 1");
-    quit(1);
-    return;
-  }
+    if(selection == NULL) {
+        log_event("Selection was null exit 1");
+        quit(1);
+        return;
+    }
 
-  fprintf(output, "%s\n", selection);
-  fflush(output);
-  fclose(output);
-  quit(0);
+    fprintf(output, "%s\n", selection);
+    fflush(output);
+    fclose(output);
+    quit(0);
 }
 
 void handle_dpad(State* state, SDL_JoyHatEvent event) {
-  log_event("D-Pad movement: hat %d, value: %d", event.hat, event.value);
-  switch (event.value) {
-  case SDL_HAT_UP:
-    menu_move_selection(state, -1, 1);
-    state->button_repeat_active = 1;
-    break;
-  case SDL_HAT_DOWN:
-    menu_move_selection(state, 1, 1);
-    state->button_repeat_active = 1;
-    break;
-  case SDL_HAT_LEFT:
-    menu_move_selection(state, -state->menu_max_items, 0);
-    state->button_repeat_active = 1;
-    break;
-  case SDL_HAT_RIGHT:
-    menu_move_selection(state, state->menu_max_items, 0);
-    state->button_repeat_active = 1;
-    break;
-  case SDL_HAT_CENTERED:
-    state->button_repeat_active = 0;
-    break;
-  default:
-    break;
-  }
+    log_event("D-Pad movement: hat %d, value: %d", event.hat, event.value);
+    switch (event.value) {
+        case SDL_HAT_UP:
+            menu_move_selection(state, -1, 1);
+            state->button_repeat_active = 1;
+            break;
+        case SDL_HAT_DOWN:
+            menu_move_selection(state, 1, 1);
+            state->button_repeat_active = 1;
+            break;
+        case SDL_HAT_LEFT:
+            menu_move_selection(state, -state->menu_max_items, 0);
+            state->button_repeat_active = 1;
+            break;
+        case SDL_HAT_RIGHT:
+            menu_move_selection(state, state->menu_max_items, 0);
+            state->button_repeat_active = 1;
+            break;
+        case SDL_HAT_CENTERED:
+            state->button_repeat_active = 0;
+            break;
+        default:
+            break;
+    }
 }
 
 void handle_joypad_button(State* state, SDL_JoyButtonEvent event) {
-  log_event("Joypad button pressed: button %d", event.button);
-  switch (event.button) {
-  case BUTTON_A:
-    menu_confirm(state);
-    break;
-  case BUTTON_START:
-    menu_confirm(state);
-    break;
-  case BUTTON_B:
-    quit(1);
-    return;
-    break;
-  case BUTTON_MENU:
-    quit(1);
-    break;
-  default:
-    break;
-  }
+    log_event("Joypad button pressed: button %d", event.button);
+    switch (event.button) {
+        case BUTTON_A:
+            menu_confirm(state);
+            break;
+        case BUTTON_START:
+            menu_confirm(state);
+            break;
+        case BUTTON_B:
+            quit(1);
+            return;
+            break;
+        case BUTTON_MENU:
+            quit(1);
+            break;
+        default:
+            break;
+    }
 }
 
 void modify_filter_query(State* state, int key_sym) {
-  int len = strlen(filter_query);
+    int len = strlen(filter_query);
 
-  state->selected_index = 0;
+    state->selected_index = 0;
 
-  // Handle backspace
-  if (key_sym == SDLK_BACKSPACE && len > 0) {
-    log_event("modify_filter_query: backspace");
-    filter_query[len - 1] = '\0';
-    log_event("Filter query modified: `%s`", filter_query);
-    return;
-  }
+    // Handle backspace
+    if (key_sym == SDLK_BACKSPACE && len > 0) {
+        log_event("modify_filter_query: backspace");
+        filter_query[len - 1] = '\0';
+        log_event("Filter query modified: `%s`", filter_query);
+        return;
+    }
 
-  if (len < sizeof(filter_query) - 1) {
-    log_event("modify_filter_query: with char `%c` to filter query", (char)key_sym);
-    filter_query[len] = (char)key_sym;
-    filter_query[len + 1] = '\0';
-    log_event("Filter query modified: `%s`", filter_query);
-    return;
-  }
+    if (len < sizeof(filter_query) - 1) {
+        log_event("modify_filter_query: with char `%c` to filter query", (char)key_sym);
+        filter_query[len] = (char)key_sym;
+        filter_query[len + 1] = '\0';
+        log_event("Filter query modified: `%s`", filter_query);
+        return;
+    }
 
 }
 
 void handle_key_press(State* state, SDL_Event event) {
-  log_event("Keyboard keypress: value: %d", event.key.keysym.sym);
-  switch (event.key.keysym.sym) {
-  case SDLK_UP:
-    menu_move_selection(state, -1, 1);
-    break;
-  case SDLK_DOWN:
-    menu_move_selection(state, 1, 1);
-    break;
-  case SDLK_LEFT:
-    menu_move_selection(state, -state->menu_max_items, 0);
-    break;
-  case SDLK_RIGHT:
-    menu_move_selection(state, state->menu_max_items, 0);
-    break;
-  case SDLK_RETURN:
-    menu_confirm(state);
-    break;
-  case SDLK_ESCAPE:
-    quit(1);
-    return;
-    break;
-  case SDLK_a ... SDLK_z:
-  case SDLK_0 ... SDLK_9:
-  case SDLK_SPACE:
-  case SDLK_MINUS:
-  case SDLK_UNDERSCORE:
-  case SDLK_PERIOD:
-  case SDLK_COMMA:
-  case SDLK_SLASH:
-  case SDLK_BACKSLASH:
-  case SDLK_BACKSPACE:
-    modify_filter_query(state, event.key.keysym.sym);
-    break;
-  default:
-    break;
-  }
+    log_event("Keyboard keypress: value: %d", event.key.keysym.sym);
+    switch (event.key.keysym.sym) {
+        case SDLK_UP:
+            menu_move_selection(state, -1, 1);
+            break;
+        case SDLK_DOWN:
+            menu_move_selection(state, 1, 1);
+            break;
+        case SDLK_LEFT:
+            menu_move_selection(state, -state->menu_max_items, 0);
+            break;
+        case SDLK_RIGHT:
+            menu_move_selection(state, state->menu_max_items, 0);
+            break;
+        case SDLK_RETURN:
+            menu_confirm(state);
+            break;
+        case SDLK_ESCAPE:
+            quit(1);
+            return;
+            break;
+        case SDLK_a ... SDLK_z:
+        case SDLK_0 ... SDLK_9:
+        case SDLK_SPACE:
+        case SDLK_MINUS:
+        case SDLK_UNDERSCORE:
+        case SDLK_PERIOD:
+        case SDLK_COMMA:
+        case SDLK_SLASH:
+        case SDLK_BACKSLASH:
+        case SDLK_BACKSPACE:
+            modify_filter_query(state, event.key.keysym.sym);
+            break;
+        default:
+            break;
+    }
 }
 
 int handle_input(State* state, SDL_Event event) {
-  int event_handled = 1;
+    int event_handled = 1;
 
-  switch (event.type) {
-  case SDL_JOYHATMOTION:
-    handle_dpad(state, event.jhat);
-    break;
-  case SDL_JOYBUTTONDOWN:
-    handle_joypad_button(state, event.jbutton);
-    break;
-  case SDL_KEYDOWN:
-    handle_key_press(state, event);
-    break;
-  default:
-    event_handled = 0;
-  }
-  return event_handled;
+    switch (event.type) {
+        case SDL_JOYHATMOTION:
+            handle_dpad(state, event.jhat);
+            break;
+        case SDL_JOYBUTTONDOWN:
+            handle_joypad_button(state, event.jbutton);
+            break;
+        case SDL_KEYDOWN:
+            handle_key_press(state, event);
+            break;
+        default:
+            event_handled = 0;
+    }
+    return event_handled;
 }
 
 void set_title(Config *config, State* state) {
-  if (strlen(config->title)) {
-    state->title = create_text_surface(config->title, config->text_color, state->title_font);
-    state->title_height = state->title->h + config->menu_item_padding * 2;
-  }
+    if (strlen(config->title)) {
+        state->title = create_text_surface(config->title, config->text_color, state->title_font);
+        state->title_height = state->title->h + config->menu_item_padding * 2;
+    }
 }
 
 void render_cover_image(Config* config, State* state) {
-  if(!state->cover_images_enabled) {
-    return;
-  }
+    if(!state->cover_images_enabled) {
+        return;
+    }
 
-  //char* selected_item = state->menu_items->lines[state->selected_index];
-char* selected_item = filtered_menu_items(state->menu_items, filter_query)->lines[state->selected_index];
+    //char* selected_item = state->menu_items->lines[state->selected_index];
+    char* selected_item = filtered_menu_items(state->menu_items, filter_query)->lines[state->selected_index];
 
-  char* filename = malloc(sizeof(char) * 255);
-  char* filepath = malloc(sizeof(char) * 255);
+    char* filename = malloc(sizeof(char) * 255);
+    char* filepath = malloc(sizeof(char) * 255);
 
-  strcpy(filename, selected_item);
-  terminate_at_file_extension(filename);
-  sprintf(filepath, "%s/%s.png", config->cover_images_dir, filename);
-  log_event("Looking for cover image %s", filepath);
+    strcpy(filename, selected_item);
+    terminate_at_file_extension(filename);
+    sprintf(filepath, "%s/%s.png", config->cover_images_dir, filename);
+    log_event("Looking for cover image %s", filepath);
 
-  if(access(filepath, R_OK) != -1) {
-    log_event("Found cover image %s", filepath);
-    SDL_Surface* cover_image = IMG_Load(filepath);
-    SDL_BlitSurface(cover_image, NULL, state->screen, NULL);
-    sdl.free_surface(cover_image);
-  } else {
-    log_event("No cover image found for %s", selected_item);
-  }
+    if(access(filepath, R_OK) != -1) {
+        log_event("Found cover image %s", filepath);
+        SDL_Surface* cover_image = IMG_Load(filepath);
+        SDL_BlitSurface(cover_image, NULL, state->screen, NULL);
+        sdl.free_surface(cover_image);
+    } else {
+        log_event("No cover image found for %s", selected_item);
+    }
 
-  free(filename);
-  free(filepath);
+    free(filename);
+    free(filepath);
 }
 
 void render(Config* config, State* state) {
-  BunchOfLines* menu_items = filtered_menu_items(state->menu_items, filter_query);
-  int menu_max_items = state->menu_max_items;
-  int filter_text_height = 0;
+    BunchOfLines* menu_items = filtered_menu_items(state->menu_items, filter_query);
+    int menu_max_items = state->menu_max_items;
+    int filter_text_height = 0;
 
-  SDL_FillRect(state->screen, NULL, state->background_color);
-  SDL_Surface* background_image = state->background_image;
-  if(background_image) {
-    SDL_BlitSurface(background_image, NULL, state->screen, NULL);
-  }
-
-  render_cover_image(config, state);
-
-  if (state->title) {
-    SDL_Rect dest = {config->left_padding, config->top_padding, 0, 0};
-    SDL_BlitSurface(state->title, NULL, state->screen, &dest);
-  }
-
-  if (strlen(filter_query) > 0) {
-    char filter_text[255];
-    sprintf(filter_text, " > %s_", filter_query);
-    SDL_Surface* filter_surface = create_text_surface(filter_text, config->text_color, state->font);
-    SDL_Rect dest = {config->left_padding, config->top_padding + state->title_height, 0, 0};
-    SDL_BlitSurface(filter_surface, NULL, state->screen, &dest);
-    sdl.free_surface(filter_surface);
-
-    filter_text_height = state->menu_item_height;
-    menu_max_items -= 1;
-  }
-
-  int menu_y_offset = config->top_padding + state->title_height + config->menu_item_margin + filter_text_height;
-
-  int default_items_above = menu_max_items / 2;
-  int default_items_below = menu_max_items - default_items_above - 1;
-
-  int visible_menu_start = state->selected_index - default_items_above;
-  int visible_menu_end = state->selected_index + default_items_below;
-
-  // Not enough items above cursor, lock window to top of list
-  if (visible_menu_start < 0) {
-    visible_menu_start = 0;
-    visible_menu_end = visible_menu_start + menu_max_items - 1;
-  }
-
-  // Not enough items below cursor lock window to bottom of list
-  if (visible_menu_end > menu_items->count - 1) {
-    visible_menu_end = menu_items->count - 1;
-    visible_menu_start = visible_menu_end - menu_max_items + 1;
-  }
-
-  // Final constraint check that neither are out of bounds
-  if (visible_menu_start < 0 || visible_menu_start > (menu_items->count - 1)) {
-    visible_menu_start = 0;
-  }
-  if (visible_menu_end > menu_items->count - 1 || visible_menu_end < 0) {
-    visible_menu_end = menu_items->count - 1;
-  }
-
-  log_event("Rendering item range %d-%d", visible_menu_start, visible_menu_end);
-
-  int menu_index = 0;
-  int items_render_count = visible_menu_end - visible_menu_start + 1;
-
-  for (int i = 0; i < items_render_count; i++) {
-    if (visible_menu_end - visible_menu_end > i) {
-      log_event("Done rendering items %d", i);
-      break;
+    SDL_FillRect(state->screen, NULL, state->background_color);
+    SDL_Surface* background_image = state->background_image;
+    if(background_image) {
+        SDL_BlitSurface(background_image, NULL, state->screen, NULL);
     }
 
-    menu_index = visible_menu_start + i;
+    render_cover_image(config, state);
 
-    char text[255];
-    if (config->prefix_with_number) {
-      sprintf(text, "%3d. %s", menu_index + 1, menu_items->lines[menu_index]);
-    } else {
-      sprintf(text, "%s", menu_items->lines[menu_index]);
-    }
-    if (config->hide_file_extensions) {
-      terminate_at_file_extension(text);
+    if (state->title) {
+        SDL_Rect dest = {config->left_padding, config->top_padding, 0, 0};
+        SDL_BlitSurface(state->title, NULL, state->screen, &dest);
     }
 
-    int selected_state = state->selected_index == menu_index;
+    if (strlen(filter_query) > 0) {
+        char filter_text[255];
+        sprintf(filter_text, " > %s_", filter_query);
+        SDL_Surface* filter_surface = create_text_surface(filter_text, config->text_color, state->font);
+        SDL_Rect dest = {config->left_padding, config->top_padding + state->title_height, 0, 0};
+        SDL_BlitSurface(filter_surface, NULL, state->screen, &dest);
+        sdl.free_surface(filter_surface);
 
-    SDL_Rect dest;
-    dest.x = config->left_padding;
-    dest.y = menu_y_offset + i * (state->menu_item_height + config->menu_item_margin);
-    dest.w = 0;
-    dest.h = 0;
+        filter_text_height = state->menu_item_height;
+        menu_max_items -= 1;
+    }
 
-    SDL_Surface** menu_item = create_menu_item(config, state, text, selected_state);
+    int menu_y_offset = config->top_padding + state->title_height + config->menu_item_margin + filter_text_height;
 
-    log_event("blitting menu item %d at %d,%d", menu_index, dest.x, dest.y);
-    sdl.blit_surface(menu_item[0], NULL, state->screen, &dest);
-    dest.x += config->menu_item_padding;
-    dest.y += config->menu_item_padding;
-    sdl.blit_surface(menu_item[1], NULL, state->screen, &dest);
-    log_event("blitting menu item %d at %d,%d", menu_index, dest.x, dest.y);
-    sdl.free_surface(menu_item[0]);
-    sdl.free_surface(menu_item[1]);
-    free(menu_item);
-  }
+    int default_items_above = menu_max_items / 2;
+    int default_items_below = menu_max_items - default_items_above - 1;
 
-  log_event("flipping screen");
-  sdl.flip(state->screen);
+    int visible_menu_start = state->selected_index - default_items_above;
+    int visible_menu_end = state->selected_index + default_items_below;
+
+    // Not enough items above cursor, lock window to top of list
+    if (visible_menu_start < 0) {
+        visible_menu_start = 0;
+        visible_menu_end = visible_menu_start + menu_max_items - 1;
+    }
+
+    // Not enough items below cursor lock window to bottom of list
+    if (visible_menu_end > menu_items->count - 1) {
+        visible_menu_end = menu_items->count - 1;
+        visible_menu_start = visible_menu_end - menu_max_items + 1;
+    }
+
+    // Final constraint check that neither are out of bounds
+    if (visible_menu_start < 0 || visible_menu_start > (menu_items->count - 1)) {
+        visible_menu_start = 0;
+    }
+    if (visible_menu_end > menu_items->count - 1 || visible_menu_end < 0) {
+        visible_menu_end = menu_items->count - 1;
+    }
+
+    log_event("Rendering item range %d-%d", visible_menu_start, visible_menu_end);
+
+    int menu_index = 0;
+    int items_render_count = visible_menu_end - visible_menu_start + 1;
+
+    for (int i = 0; i < items_render_count; i++) {
+        if (visible_menu_end - visible_menu_end > i) {
+            log_event("Done rendering items %d", i);
+            break;
+        }
+
+        menu_index = visible_menu_start + i;
+
+        char text[255];
+        if (config->prefix_with_number) {
+            sprintf(text, "%3d. %s", menu_index + 1, menu_items->lines[menu_index]);
+        } else {
+            sprintf(text, "%s", menu_items->lines[menu_index]);
+        }
+        if (config->hide_file_extensions) {
+            terminate_at_file_extension(text);
+        }
+
+        int selected_state = state->selected_index == menu_index;
+
+        SDL_Rect dest;
+        dest.x = config->left_padding;
+        dest.y = menu_y_offset + i * (state->menu_item_height + config->menu_item_margin);
+        dest.w = 0;
+        dest.h = 0;
+
+        SDL_Surface** menu_item = create_menu_item(config, state, text, selected_state);
+
+        log_event("blitting menu item %d at %d,%d", menu_index, dest.x, dest.y);
+        sdl.blit_surface(menu_item[0], NULL, state->screen, &dest);
+        dest.x += config->menu_item_padding;
+        dest.y += config->menu_item_padding;
+        sdl.blit_surface(menu_item[1], NULL, state->screen, &dest);
+        log_event("blitting menu item %d at %d,%d", menu_index, dest.x, dest.y);
+        sdl.free_surface(menu_item[0]);
+        sdl.free_surface(menu_item[1]);
+        free(menu_item);
+    }
+
+    log_event("flipping screen");
+    sdl.flip(state->screen);
 }
 
 void set_background_image(State* state, char *background_image_filepath) {
-  log_event("Background image file path is `%s`\n",
-          background_image_filepath);
-  if (strlen(background_image_filepath) == 0) {
-    log_event("No background image");
-  } else if (strcmp(background_image_filepath, "DEFAULT") == 0) {
-    log_event("Using default background image\n");
-    SDL_RWops *rw =
-        SDL_RWFromMem(default_background_image, default_background_image_len);
-    state->background_image = IMG_Load_RW(rw, 1);
-  } else if (strlen(background_image_filepath) &&
-      access(background_image_filepath, R_OK) != -1) {
-    log_event("Loading background image `%s`\n",
-            background_image_filepath);
-    state->background_image = IMG_Load(background_image_filepath);
-  }
+    log_event("Background image file path is `%s`\n",
+              background_image_filepath);
+    if (strlen(background_image_filepath) == 0) {
+        log_event("No background image");
+    } else if (strcmp(background_image_filepath, "DEFAULT") == 0) {
+        log_event("Using default background image\n");
+        SDL_RWops *rw =
+            SDL_RWFromMem(default_background_image, default_background_image_len);
+        state->background_image = IMG_Load_RW(rw, 1);
+    } else if (strlen(background_image_filepath) &&
+        access(background_image_filepath, R_OK) != -1) {
+        log_event("Loading background image `%s`\n",
+                  background_image_filepath);
+        state->background_image = IMG_Load(background_image_filepath);
+    }
 }
 
 void first_render(Config* config, State* state) {
-  set_background_image(state, config->background_image_filepath);
-  set_title(config, state);
+    set_background_image(state, config->background_image_filepath);
+    set_title(config, state);
 
-  state->background_color =
-      SDL_MapRGB(state->screen->format, config->background_color.r,
-                 config->background_color.g, config->background_color.b);
+    state->background_color =
+        SDL_MapRGB(state->screen->format, config->background_color.r,
+                   config->background_color.g, config->background_color.b);
 
-  state->menu_item_height = state->font_pixel_height + 2*config->menu_item_padding;
-  state->menu_height = config->screen_height - (config->top_padding + config->bottom_padding + state->title_height);
-  state->menu_max_items = state->menu_height / (state->menu_item_height + config->menu_item_margin);
+    state->menu_item_height = state->font_pixel_height + 2*config->menu_item_padding;
+    state->menu_height = config->screen_height - (config->top_padding + config->bottom_padding + state->title_height);
+    state->menu_max_items = state->menu_height / (state->menu_item_height + config->menu_item_margin);
 
-  if(state->menu_max_items > state->menu_items->count) {
-    state->menu_max_items = state->menu_items->count;
-  }
+    if(state->menu_max_items > state->menu_items->count) {
+        state->menu_max_items = state->menu_items->count;
+    }
 
-  log_event("top padding= %d", config->top_padding);
-  log_event("bottom padding= %d", config->bottom_padding);
-  log_event("menu height = %d", state->menu_height);
-  log_event("menu_item_height = %d",  state->menu_item_height);
-  log_event("max_menu_items = %d",  state->menu_max_items);
+    log_event("top padding= %d", config->top_padding);
+    log_event("bottom padding= %d", config->bottom_padding);
+    log_event("menu height = %d", state->menu_height);
+    log_event("menu_item_height = %d",  state->menu_item_height);
+    log_event("max_menu_items = %d",  state->menu_max_items);
 
-  render(config, state);
+    render(config, state);
 }
 
 void signal_handler(int signal_number) {
-  fprintf(stderr, "Caught signal %d\n", signal_number);
-  if (signal_number == SIGINT || signal_number == SIGTERM) {
-    quit(signal_number);
-    return;
-  }
+    fprintf(stderr, "Caught signal %d\n", signal_number);
+    if (signal_number == SIGINT || signal_number == SIGTERM) {
+        quit(signal_number);
+        return;
+    }
 }
 
 void event_loop(Config* config, State* state) {
-  log_event("SDL waiting for event");
-  SDL_Event event;
-  int poll_result;
+    log_event("SDL waiting for event");
+    SDL_Event event;
+    int poll_result;
 
-  Uint32 last_event_at = 0;
-  Uint32 last_repeat_at = 0;
-  Uint32 time_since_last_event = 0;
-  Uint32 time_since_last_repeat = 0;
-  Uint32 loop_started = 0;
-  Uint32 loop_target_time = 1000/60;
+    Uint32 last_event_at = 0;
+    Uint32 last_repeat_at = 0;
+    Uint32 time_since_last_event = 0;
+    Uint32 time_since_last_repeat = 0;
+    Uint32 loop_started = 0;
+    Uint32 loop_target_time = 1000/60;
 
-  first_render(config, state);
+    first_render(config, state);
 
-  while (exit_code < 0) {
-    loop_started = sdl.get_ticks();
+    while (exit_code < 0) {
+        loop_started = sdl.get_ticks();
 
-    poll_result = sdl.poll_event(&event);
+        poll_result = sdl.poll_event(&event);
 
-    if (poll_result) {
-      last_event_at = sdl.get_ticks();
-      log_event("Event type: %d", event.type);
-      if (handle_input(state, event)) {
-        render(config, state);
-      }
+        if (poll_result) {
+            last_event_at = sdl.get_ticks();
+            log_event("Event type: %d", event.type);
+            if (handle_input(state, event)) {
+                render(config, state);
+            }
+        }
+
+        time_since_last_event = sdl.get_ticks() - last_event_at;
+
+        if (!poll_result && state->button_repeat_active) {
+            time_since_last_repeat = sdl.get_ticks() - last_repeat_at;
+
+            if (time_since_last_event > BUTTON_REPEAT_DELAY_MS &&
+                time_since_last_repeat > BUTTON_REPEAT_INTERVAL) {
+                handle_input(state, event);
+                render(config, state);
+            }
+        }
+
+        if (config->user_inactivity_timeout_ms && !poll_result && time_since_last_event > config->user_inactivity_timeout_ms) {
+            timeout(config->user_inactivity_timeout_ms);
+        }
+
+        Uint32 elapsed = sdl.get_ticks() - loop_started;
+        if (elapsed < loop_target_time) {
+            sdl.delay(loop_target_time - elapsed);
+        }
     }
-
-    time_since_last_event = sdl.get_ticks() - last_event_at;
-
-    if (!poll_result && state->button_repeat_active) {
-      time_since_last_repeat = sdl.get_ticks() - last_repeat_at;
-
-      if (time_since_last_event > BUTTON_REPEAT_DELAY_MS &&
-          time_since_last_repeat > BUTTON_REPEAT_INTERVAL) {
-        handle_input(state, event);
-        render(config, state);
-      }
-    }
-
-    if (config->user_inactivity_timeout_ms && !poll_result && time_since_last_event > config->user_inactivity_timeout_ms) {
-      timeout(config->user_inactivity_timeout_ms);
-    }
-
-    Uint32 elapsed = sdl.get_ticks() - loop_started;
-    if (elapsed < loop_target_time) {
-      sdl.delay(loop_target_time - elapsed);
-    }
-  }
 }
 
 void goose_setup(Config* config, State *state) {
-  set_log_target_by_filepath(config->log_filepath);
+    set_log_target_by_filepath(config->log_filepath);
 
-  set_output(stdout);
+    set_output(stdout);
 
-  log_event("HONK HONK");
-  log_event("Setting starting selection to %d", config->start_at_nth - 1);
-  state->selected_index = config->start_at_nth - 1;
+    log_event("HONK HONK");
+    log_event("Setting starting selection to %d", config->start_at_nth - 1);
+    state->selected_index = config->start_at_nth - 1;
 
-  log_event("Reading menu items");
-  if (!state->menu_items) {
-    state->menu_items = read_lines_from_stdin(MAX_MENU_ITEMS, MAX_LINE_LENGTH);
-  }
+    log_event("Reading menu items");
+    if (!state->menu_items) {
+        state->menu_items = read_lines_from_stdin(MAX_MENU_ITEMS, MAX_LINE_LENGTH);
+    }
 
-  if (state->menu_items->count < 1) {
-    log_event("No menu items on stdin");
-    quit(1);
-    return;
-  }
+    if (state->menu_items->count < 1) {
+        log_event("No menu items on stdin");
+        quit(1);
+        return;
+    }
 
-  log_event("Menu items count=%d", state->menu_items->count);
-  log_event("  first =%s", state->menu_items->lines[0]);
-  log_event("  last  =%s", state->menu_items->lines[state->menu_items->count - 1]);
+    log_event("Menu items count=%d", state->menu_items->count);
+    log_event("  first =%s", state->menu_items->lines[0]);
+    log_event("  last  =%s", state->menu_items->lines[state->menu_items->count - 1]);
 
-  log_event("SDL starting");
-  init_sdl(config, state);
+    log_event("SDL starting");
+    init_sdl(config, state);
 
-  // check if cover images directory is set and exists
-  if(strlen(config->cover_images_dir) > 0 && access(config->cover_images_dir, R_OK) != -1) {
-    log_event("Cover images enabled");
-    state->cover_images_enabled = true;
-  }
+    // check if cover images directory is set and exists
+    if(strlen(config->cover_images_dir) > 0 && access(config->cover_images_dir, R_OK) != -1) {
+        log_event("Cover images enabled");
+        state->cover_images_enabled = true;
+    }
 }
 
 int main(int argc, char **argv) {
-  signal(SIGINT, signal_handler);
-  signal(SIGTERM, signal_handler);
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
 
-  Config* config = default_config();
-  parse_command_line_options(argc, argv, config);
+    Config* config = default_config();
+    parse_command_line_options(argc, argv, config);
 
-  State* state = init_state();
+    State* state = init_state();
 
-  goose_setup(config, state);
-  event_loop(config, state);
+    goose_setup(config, state);
+    event_loop(config, state);
 
-  log_event("Done");
-  cleanup();
+    log_event("Done");
+    cleanup();
 
-  return exit_code;
+    return exit_code;
 }

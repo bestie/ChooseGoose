@@ -51,28 +51,28 @@ void cleanup_state(State *state) {
 }
 
 BunchOfLines* read_lines_from_stdin(int max_lines, int max_line_length) {
-  size_t total_memory =
-      max_lines * sizeof(char *) + max_lines * max_line_length;
-  char **lines = malloc(total_memory);
-  BunchOfLines *bunch = malloc(sizeof(BunchOfLines));
+    size_t total_memory =
+        max_lines * sizeof(char *) + max_lines * max_line_length;
+    char **lines = malloc(total_memory);
+    BunchOfLines *bunch = malloc(sizeof(BunchOfLines));
 
-  char *line_memory = (char *)(lines + max_lines);
-  for (int i = 0; i < max_lines; i++) {
-    lines[i] = line_memory + i * max_line_length;
-  }
-
-  int lines_i = 0;
-  while (lines_i < max_lines && fgets(lines[lines_i], max_line_length, stdin)) {
-    lines[lines_i][strcspn(lines[lines_i], "\n")] = '\0';
-    if(strlen(lines[lines_i]) > 0) {
-      lines_i++;
+    char *line_memory = (char *)(lines + max_lines);
+    for (int i = 0; i < max_lines; i++) {
+        lines[i] = line_memory + i * max_line_length;
     }
-  }
 
-  bunch->count = lines_i;
-  bunch->max_length = max_line_length;
-  bunch->lines = lines;
+    int lines_i = 0;
+    while (lines_i < max_lines && fgets(lines[lines_i], max_line_length, stdin)) {
+        lines[lines_i][strcspn(lines[lines_i], "\n")] = '\0';
+        if(strlen(lines[lines_i]) > 0) {
+            lines_i++;
+        }
+    }
 
-  return bunch;
+    bunch->count = lines_i;
+    bunch->max_length = max_line_length;
+    bunch->lines = lines;
+
+    return bunch;
 }
 
