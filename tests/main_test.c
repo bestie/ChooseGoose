@@ -275,13 +275,12 @@ Test(main_tests, test_init) {
 
   input_q.events[0] = INPUTS.down_arrow;
   input_q.events[1] = INPUTS.down_arrow;
-  input_q.events[2] = INPUTS.down_arrow;
-  input_q.events[3] = INPUTS.down_arrow;
-  input_q.events[4] = INPUTS.enter_key;
-  input_q.count = 5;
+  input_q.events[2] = INPUTS.enter_key;
+  input_q.count = 3;
 
   test_hooks.pre_tick = tick_tick_boom;
   test_hooks.on_frame = count_frames;
 
   start_app(config_and_state);
+  cr_assert(false);
 }

@@ -77,9 +77,9 @@ void cleanup(void) {
   SDL_Quit();
 }
 
-void quit(int exit_code) {
-  cleanup();
-  exit(exit_code);
+static int exit_code = -1;
+void quit(int code) {
+  exit_code = code;
 }
 
 void terminate_at_file_extension(char *filename) {
@@ -104,7 +104,6 @@ void set_log_target_by_filepath(char log_filepath[]) {
 
   if (!log_file) {
     fprintf(stderr, "Unable to open log file `%s`\n", log_filepath);
-    quit(1);
   }
 }
 
@@ -161,6 +160,7 @@ void init_sdl(Config* config, State* state) {
   if (sdl.init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
     log_event("Unable to init SDL: %s\n", SDL_GetError());
     quit(1);
+    return;
   }
 
   log_event("Configuring SDL");
@@ -179,6 +179,7 @@ void init_sdl(Config* config, State* state) {
     if (state->joystick == NULL) {
       log_event("Unable to open joystick: %s\n", sdl.get_error());
       quit(1);
+      return;
     } else {
       log_event("Joystick opened: %s\n", SDL_JoystickName(0));
     }
@@ -201,7 +202,7 @@ void init_sdl(Config* config, State* state) {
 void timeout(int user_inactivity_timeout_ms) {
   log_event("Inactivity timeout reached - %ds", user_inactivity_timeout_ms / 1000);
   cleanup();
-  exit(124);
+  quit(124);
 }
 
 SDL_Surface* create_text_surface(char *text, Color color, TTF_Font *font) {
@@ -300,6 +301,7 @@ void menu_confirm(State *state) {
   if(selection == NULL) {
     log_event("Selection was null exit 1");
     quit(1);
+    return;
   }
 
   fprintf(stdout, "%s\n", filtered_menu_items(state->menu_items, filter_query)->lines[state->selected_index]);
@@ -344,6 +346,7 @@ void handle_joypad_button(State* state, SDL_JoyButtonEvent event) {
     break;
   case BUTTON_B:
     quit(1);
+    return;
     break;
   case BUTTON_MENU:
     quit(1);
@@ -395,7 +398,8 @@ void handle_key_press(State* state, SDL_Event event) {
     menu_confirm(state);
     break;
   case SDLK_ESCAPE:
-    quit(0);
+    quit(1);
+    return;
     break;
   case SDLK_a ... SDLK_z:
   case SDLK_0 ... SDLK_9:
@@ -622,6 +626,7 @@ void signal_handler(int signal_number) {
   fprintf(stderr, "Caught signal %d\n", signal_number);
   if (signal_number == SIGINT || signal_number == SIGTERM) {
     quit(signal_number);
+    return;
   }
 }
 
@@ -639,7 +644,7 @@ void event_loop(Config* config, State* state) {
 
   first_render(config, state);
 
-  while (1) {
+  while (exit_code < 0) {
     loop_started = sdl.get_ticks();
 
     poll_result = sdl.poll_event(&event);
@@ -690,6 +695,7 @@ void goose_setup(Config* config, State *state) {
   if (state->menu_items->count < 1) {
     log_event("No menu items on stdin");
     quit(1);
+    return;
   }
 
   log_event("Menu items count=%d", state->menu_items->count);
@@ -720,5 +726,6 @@ int main(int argc, char **argv) {
 
   log_event("Done");
   cleanup();
-  return 0;
+
+  return exit_code;
 }
