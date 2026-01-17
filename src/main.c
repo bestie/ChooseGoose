@@ -32,8 +32,6 @@
 #define BUTTON_REPEAT_INTERVAL 150
 #define SDL_UNUSED 0
 
-// limited use global state for signal handling and logging
-State* global_state;
 FILE* log_file;
 FILE* output;
 char filter_query[128];
@@ -78,7 +76,6 @@ void cleanup(void) {
     fflush(output);
     fclose(output);
 
-    /*cleanup_state(global_state);*/
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
