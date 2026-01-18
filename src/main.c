@@ -15,6 +15,7 @@
 #include <ctype.h>
 
 #include "main.h"
+#include "SDL/SDL_keysym.h"
 #include "background_image.c"
 #include "cli_opts.h"
 #include "font.c"
@@ -384,6 +385,7 @@ void modify_filter_query(State* state, int key_sym) {
 
 void handle_key_press(State* state, SDL_Event event) {
     log_event("Keyboard keypress: value: %d", event.key.keysym.sym);
+
     switch (event.key.keysym.sym) {
         case SDLK_UP:
             menu_move_selection(state, -1, 1);
@@ -404,15 +406,7 @@ void handle_key_press(State* state, SDL_Event event) {
             quit(1);
             return;
             break;
-        case SDLK_a ... SDLK_z:
-        case SDLK_0 ... SDLK_9:
-        case SDLK_SPACE:
-        case SDLK_MINUS:
-        case SDLK_UNDERSCORE:
-        case SDLK_PERIOD:
-        case SDLK_COMMA:
-        case SDLK_SLASH:
-        case SDLK_BACKSLASH:
+        case SDLK_SPACE...SDLK_z:
         case SDLK_BACKSPACE:
             modify_filter_query(state, event.key.keysym.sym);
             break;
