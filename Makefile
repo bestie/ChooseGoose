@@ -1,16 +1,55 @@
-PLATFORM ?= $(shell uname -s)
+OS ?= $(shell uname -s)
 ARCH ?= $(shell uname -m)
-LIBC ?= glibc
 
-BUILD_DIR = build/$(PLATFORM)-$(ARCH)-$(LIBC)
-
-ifeq ($(PLATFORM), Darwin)
-	PREFIX=/opt/homebrew
-	LDFLAGS += -framework CoreFoundation -framework Cocoa
-	LDFLAGS += -Wl,-rpath,@executable_path/../Frameworks
-	DEPENDENCY_INSTALL_CMD = brew install criterion sdl12-compat sdl2_image sdl2_ttf
+ifeq ($(OS), Linux)
+	LIBC ?= "glibc"
+  PLATFORM := $(OS)-$(ARCH)-$(LIBC)
 else
+  PLATFORM := $(OS)-$(ARCH)
+endif
+
+BUILD_DIR = build/$(PLATFORM)
+
+ifeq ($(OS), Darwin)
+	PREFIX=/opt/homebrew
+
+	VENDOR_PREFIX := vendor/build
+
+	CFLAGS += -g -std=c11 -Wall \
+						-Iinclude -Ibuild \
+						-I$(VENDOR_PREFIX)/include \
+						-I$(VENDOR_PREFIX)/include/SDL
+
+	LDFLAGS += \
+		$(VENDOR_PREFIX)/lib/libfreetype.a \
+		$(VENDOR_PREFIX)/lib/libpng.a \
+		$(VENDOR_PREFIX)/lib/libSDL.a \
+		$(VENDOR_PREFIX)/lib/libSDLmain.a \
+		$(VENDOR_PREFIX)/lib/libSDL_image.a \
+		$(VENDOR_PREFIX)/obj/libSDL_ttf.o \
+		$(shell pkg-config --libs libbrotlidec zlib) \
+		-framework Cocoa \
+		-framework CoreFoundation \
+		-framework AudioUnit \
+		-framework CoreAudio \
+		-framework OpenGL \
+		-framework IOKit \
+		-framework Carbon \
+		-framework ApplicationServices \
+    -Wl,-rpath,@executable_path/../Frameworks
+
+	DEPENDENCY_INSTALL_CMD = ./static-compile-deps.sh
+else # Linux
 	PREFIX=/usr
+
+  SDL_PKGS = sdl SDL_image SDL_ttf
+
+	CFLAGS += -g -std=c11 -Wall \
+						-Iinclude -Ibuild \
+						$(shell pkg-config --cflags $(SDL_PKGS))
+
+	LDFLAGS += $(shell pkg-config --libs $(SDL_PKGS))
+
 	DEPENDENCY_INSTALL_CMD = apt-get install -y libcriterion-dev libsdl1.2-dev libsdl-ttf2.0-dev libsdl-image1.2-dev
 endif
 
@@ -20,11 +59,6 @@ LD ?= $(CROSS_COMPILE)ld
 AR ?= $(CROSS_COMPILE)ar
 AS ?= $(CROSS_COMPILE)as
 
-SDL_PKGS = SDL_image SDL_ttf
-CFLAGS += -g -std=c11 -Wall \
-          -Iinclude -Ibuild \
-          $(shell pkg-config --cflags $(SDL_PKGS))
-LDFLAGS += $(shell pkg-config --libs $(SDL_PKGS))
 
 PROJECT_NAME=ChooseGoose
 PROJECT_SHORT=choosegoose
@@ -44,8 +78,9 @@ OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 HOME ?=$(shell echo $$HOME)
 INSTALL_LOCATION ?= $(HOME)/bin/$(PROJECT_SHORT)
 
-.PHONY: all
-all: compile_flags.txt docker-compile docker-compile-rg35xx rg-demos
+# Default target compiles the library for the native platform without Docker
+.PHONY: choosegoose
+choosegoose: $(TARGET)
 
 .PHONY: install
 install: $(TARGET)
@@ -53,6 +88,9 @@ install: $(TARGET)
 
 .PHONY: goose
 goose: $(TARGET)
+
+.PHONY: all
+all: compile_flags.txt docker-compile docker-compile-rg35xx rg-demos
 
 .PHONY: demo
 demo: $(TARGET)
@@ -77,6 +115,10 @@ compile_flags.txt: Makefile
 .PHONY: install-dependencies
 install-dependencies:
 	bash -l -c "$(DEPENDENCY_INSTALL_CMD)"
+
+.PHONY: echo-build-dir
+echo-build-dir:
+	@echo $(BUILD_DIR)
 
 ### Embedded background image #################################################
 
@@ -110,6 +152,8 @@ $(TTF_FONT_FILE): $(FONT_DOWNLOAD)
 	tar --directory $(FONT_DIR) -xf $(FONT_DOWNLOAD)
 	cp $(FONT_DIR)/dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono.ttf $(TTF_FONT_FILE)
 
+.PHONY: font-download
+font_download: $(FONT_DOWNLOAD)
 $(FONT_DOWNLOAD):
 	mkdir -p $(FONT_DIR)
 	wget https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2 \

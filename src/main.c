@@ -27,8 +27,8 @@
 #define BUTTON_REPEAT_INTERVAL 150
 #define SDL_UNUSED 0
 
-FILE* log_file;
-FILE* output;
+static FILE* log_file;
+static FILE* output;
 char filter_query[128];
 
 void set_output(FILE* outfile) {
@@ -268,7 +268,6 @@ BunchOfLines* filtered_menu_items(BunchOfLines* menu_items, char* filter_query) 
 }
 
 void menu_move_selection(State* state, int increment, int cycle) {
-    //BunchOfLines* menu_items = state->menu_items;
     BunchOfLines* menu_items = filtered_menu_items(state->menu_items, filter_query);
 
     int from = state->selected_index;
@@ -294,7 +293,6 @@ void menu_confirm(State *state) {
 
     log_event("Selection confirmed item=%d/%d - `%s`", state->selected_index,
               state->menu_items->count, selection);
-
 
     if(selection == NULL) {
         log_event("Selection was null exit 1");
