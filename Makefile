@@ -138,7 +138,7 @@ $(TTF_FONT_FILE): $(FONT_DOWNLOAD)
 	tar --directory $(FONT_DIR) -xf $(FONT_DOWNLOAD)
 	cp $(FONT_DIR)/dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono.ttf $(TTF_FONT_FILE)
 
-.PHONY: font_download
+.PHONY: font-download
 font_download: $(FONT_DOWNLOAD)
 $(FONT_DOWNLOAD):
 	mkdir -p $(FONT_DIR)
