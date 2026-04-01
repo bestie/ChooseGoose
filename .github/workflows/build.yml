@@ -37,27 +37,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Cache compiled dependencies
-        id: cache-deps
-        uses: actions/cache@v5
-        with:
-          path: ./vendor
-          key: ${{ hashFiles('./static-compile-deps.sh') }}
-
       - name: Compile dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
           bash static-compile-deps.sh
 
-      - name: Cache font download
-        id: cache-font
-        uses: actions/cache@v5
-        with:
-          path: ./build/font
-          key: font
-
       - name: Download font
-        if: steps.cache-font.outputs.cache-hit != 'true'
         run: |
           make font-download
 
@@ -72,10 +56,17 @@ jobs:
           $EXECUTABLE --help | grep "ChooseGoose silly graphical menu system"
           input="$(echo -e "one\ntwo\nthree\n")"
           timeout=1000
-          log=goose.log
+          log=/tmp/goose.log
           command="$EXECUTABLE --background-image=DEFAULT --user-inactivity-timeout-ms=$timeout --log-file=$log"
 
-          time echo "$input" | $command || true
+          TIMEFORMAT=%R
+          runtime=$( { time echo "$input" | ($command 2>/dev/null || [ $? -eq 124 ]) 2>/dev/null; } 2>&1 )
+
+          echo "goosed"
+          echo "runtime=$runtime"
+          runtime_ms=$(echo "$runtime * 10000/10" | bc)
+          echo "runtime (ms) = $runtime_ms"
+          test $runtime_ms -gt $timeout && echo "That took a sufficiently long time 🥱👍"
 
           cat $log
 
@@ -84,9 +75,10 @@ jobs:
           cat $log | grep "SDL starting"                > /dev/null
           cat $log | grep "Font loaded"                 > /dev/null
           cat $log | grep "SDL waiting for event"       > /dev/null
-          cat $log | grep "Blitting menu item"          > /dev/null
+          cat $log | grep "blitting menu item"          > /dev/null
           cat $log | grep "Inactivity timeout reached"  > /dev/null
           echo "Log has stuff in it 👀👍"
+          rm -rf $log
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v6
