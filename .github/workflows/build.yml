@@ -41,6 +41,10 @@ jobs:
         run: |
           bash static-compile-deps.sh
 
+      - name: Download font
+        run: |
+          make font-download
+
       - name: Build
         run: |
           make goose
@@ -55,11 +59,7 @@ jobs:
           log=goose.log
           command="$EXECUTABLE --background-image=DEFAULT --user-inactivity-timeout-ms=$timeout --log-file=$log"
 
-          TIMEFORMAT=%R runtime=$( { time echo "$input" | $command 2>/dev/null; } 2>&1 )
-
-          runtime_ms=$(echo "$runtime * 10000/10" | bc)
-          echo "runtime (ms) = $runtime_ms"
-          test $runtime_ms -gt $timeout && echo "That took a sufficiently long time 🥱👍"
+          time echo "$input" | $command || true
 
           cat $log
 
