@@ -22,13 +22,13 @@ jobs:
     - name: Upload Linux binaries
       uses: actions/upload-artifact@v6
       with:
-        name: linux-binaries-${{ github.ref_name }}
+        name: linux-binaries
         path: build/Linux*/bin
 
     - name: Upload RG35XX demos
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
-        name: RG35XX-demos-${{ github.ref_name }}
+        name: RG35XX-demos
         path: build/RG35XX/demos
 
   build-macos:
@@ -62,7 +62,6 @@ jobs:
           TIMEFORMAT=%R
           runtime=$( { time echo "$input" | ($command 2>/dev/null || [ $? -eq 124 ]) 2>/dev/null; } 2>&1 )
 
-          echo "goosed"
           echo "runtime=$runtime"
           runtime_ms=$(echo "$runtime * 10000/10" | bc)
           echo "runtime (ms) = $runtime_ms"
