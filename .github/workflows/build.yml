@@ -65,34 +65,7 @@ jobs:
           make goose
 
       - name: Smoke test
-        run: |
-          EXECUTABLE="./build/$(uname -s)-$(uname -m)-glibc/bin/choosegoose"
-
-          $EXECUTABLE --help | grep "ChooseGoose silly graphical menu system"
-          input="$(echo -e "one\ntwo\nthree\n")"
-          timeout=1000
-          log=/tmp/goose.log
-          command="$EXECUTABLE --background-image=DEFAULT --user-inactivity-timeout-ms=$timeout --log-file=$log"
-
-          TIMEFORMAT=%R
-          runtime=$( { time echo "$input" | ($command 2>/dev/null || [ $? -eq 124 ]) 2>/dev/null; } 2>&1 )
-
-          echo "runtime=$runtime"
-          runtime_ms=$(echo "$runtime * 10000/10" | bc)
-          echo "runtime (ms) = $runtime_ms"
-          test $runtime_ms -gt $timeout && echo "That took a sufficiently long time 🥱👍"
-
-          cat $log
-
-          # Check the log
-          cat $log | head -n1 | grep "HONK HONK"        > /dev/null
-          cat $log | grep "SDL starting"                > /dev/null
-          cat $log | grep "Font loaded"                 > /dev/null
-          cat $log | grep "SDL waiting for event"       > /dev/null
-          cat $log | grep "blitting menu item"          > /dev/null
-          cat $log | grep "Inactivity timeout reached"  > /dev/null
-          echo "Log has stuff in it 👀👍"
-          rm -rf $log
+        run: bash smoke-test.sh
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v6

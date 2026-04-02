@@ -120,6 +120,10 @@ install-dependencies:
 echo-build-dir:
 	@echo $(BUILD_DIR)
 
+.PHONY: echo-bin-path
+echo-bin-path:
+	@echo $(TARGET)
+
 ### Embedded background image #################################################
 
 BACKGROUND_IMAGE = assets/bg.png
