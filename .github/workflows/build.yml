@@ -109,7 +109,14 @@ jobs:
           mkdir dist
           find artifacts -type f -name "*.tar.gz" -exec cp {} dist/ \;
 
+      - name: Get the release notes
+        run: |
+          cat CHANGELOG.md | sed -n '/## v[0-9]/,/## v[0-9]/p' | sed '$d' > release-notes.md
+
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.tar.gz
+          body_path: release-notes.md
+          make_latest: true
+
