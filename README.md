@@ -38,6 +38,11 @@ Select a movie file and play with VLC
 $ ls *.mp4 | choosegoose --hide-file-extensions | xargs vlc --play-and-exit 
 ```
 
+Or a MacOS application launcher
+```sh
+ls -1 /Applications/*.app | choosegoose --hide-file-extensions | xargs open
+```
+
 Use the following command line options to customize:
 
 ```
