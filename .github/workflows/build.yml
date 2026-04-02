@@ -37,7 +37,7 @@ jobs:
       with:
         ruby-version: '4.0'
 
-    - name: Compile binary and demos
+    - name: Compile binary
       run: |
         mkdir build
         docker run --rm \
@@ -46,6 +46,8 @@ jobs:
           ${{ env.DOCKER_TAG }} \
           bash -c "source cross_compilation_env.sh && make choosegoose"
 
+    - name: Compile demos
+      run: |
         make rg-demos
 
     - name: Prepare artifacts
