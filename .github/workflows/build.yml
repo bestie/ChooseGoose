@@ -29,11 +29,17 @@ jobs:
         tar czf Linux-arm-uclibcgnueabi.tar.gz build/Linux-arm-uclibcgnueabi/bin
         tar czf RG35XX.tar.gz build/RG35XX
 
-    - name: Upload artifacts
+    - name: Upload RG35XX artifacts
       uses: actions/upload-artifact@v6
       with:
-        name: Linux-artifacts
-        path: "*.tar.gz"
+        name: RG35XX
+        path: RG35XX.tar.gz
+
+    - name: Upload binary
+      uses: actions/upload-artifact@v6
+      with:
+        name: RG35XX
+        path: Linux-arm-uclibcgnueabi.tar.gz
 
   build-macos:
     runs-on: macos-latest
