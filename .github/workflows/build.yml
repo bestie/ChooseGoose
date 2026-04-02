@@ -62,13 +62,21 @@ jobs:
 
       - name: Build
         run: |
-          make goose
+          make choosegoose
 
       - name: Smoke test
         run: bash smoke-test.sh
 
-      - name: Upload build artifacts
+      - name: Upload binaries
         uses: actions/upload-artifact@v6
         with:
-          name: macos-arm64-binary
-          path: build/Darwin*/bin
+          name: macos-binaries
+          path: build/Darwin*
+
+
+      - name: Publish release binaries
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: |
+            build/Darwin*
