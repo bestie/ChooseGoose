@@ -38,7 +38,9 @@ jobs:
         docker run --rm \
           --volume "$(pwd)/build:/root/choosegoose/build" \
           ${{ env.DOCKER_TAG }} \
-          bash -c "source cross_compilation_env.sh && make choosegoose rg-demos"
+          bash -c "source cross_compilation_env.sh && make choosegoose"
+
+        make rg-demos
 
     - name: Prepare artifacts
       id: prepare-artifacts
