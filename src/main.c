@@ -8,6 +8,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <fcntl.h>
 
 #include "main.h"
 #include "cli_opts.h"
@@ -154,6 +155,26 @@ SDL_Interface* get_sdl_interface(void) {
     return &sdl;
 }
 
+
+int saved_stderr;
+
+void suppress_stderr(void) {
+    saved_stderr = dup(STDERR_FILENO);
+
+    int devnull = open("/dev/null", O_WRONLY);
+    if (devnull != -1) {
+        dup2(devnull, STDERR_FILENO);
+        close(devnull);
+    }
+}
+
+void restore_stderr(void) {
+    if (saved_stderr != -1) {
+        dup2(saved_stderr, STDERR_FILENO);
+        close(saved_stderr);
+    }
+}
+
 void init_sdl(Config* config, State* state) {
     log_event("SDL initialization started.");
     if (sdl.init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
@@ -168,8 +189,14 @@ void init_sdl(Config* config, State* state) {
 
     log_event("SDL_SetVideoMode(SCREEN_WIDTH=%d, SCREEN_HEIGHT=%d, bpp=%d)",
               config->screen_width, config->screen_height, config->bits_per_pixel);
+
+    // hack to avoid annoying macos warning being printed.
+    suppress_stderr();
+
     state->screen = sdl.set_video_mode(config->screen_width, config->screen_height,
                                        config->bits_per_pixel, SDL_SWSURFACE | SDL_NOFRAME);
+
+    restore_stderr();
 
     log_event("Looking for joysticks");
     if (sdl.num_joysticks() > 0) {
