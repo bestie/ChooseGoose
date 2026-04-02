@@ -58,7 +58,7 @@ Config* default_config() {
 }
 
 void print_usage(void) {
-    fprintf(stdout, "ChooseGoose silly graphical menu system [version %s]\n", APP_VERSION);
+    fprintf(stdout, "ChooseGoose — a silly graphical menu system [version %s]\n", APP_VERSION);
     fprintf(stdout, "\n");
     fprintf(stdout, "Given an input list of new-line separated items on stdin, "
             "it will render a silly interactive menu and allow the user "
