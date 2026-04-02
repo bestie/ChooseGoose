@@ -33,6 +33,10 @@ jobs:
       with:
         tag: ${{ env.DOCKER_TAG }}
 
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '4.0'
+
     - name: Compile binary and demos
       run: |
         docker run --rm \
