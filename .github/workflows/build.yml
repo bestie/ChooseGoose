@@ -10,18 +10,35 @@ on:
   pull_request:
     branches: ["main"]
 
+env:
+  DOCKER_TAG: choosegoose:latest
+
 jobs:
+  build-crosscomp-image:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: bestie/libnjkafka/.github/actions/docker-gha-cache/build@main
+      with:
+        tag: ${{ env.DOCKER_TAG }}
 
   build-RG35XX:
     runs-on: ubuntu-latest
-    env:
-      DOCKER_TAG: choosegoose:${{ github.ref_name }}-${{ github.sha }}
+    needs: ["build-crosscomp-image"]
 
     steps:
     - uses: actions/checkout@v6
 
-    - name: Build the Docker image
-      run: make rg35xx
+    - uses: bestie/libnjkafka/.github/actions/docker-gha-cache/restore@main
+      with:
+        tag: ${{ env.DOCKER_TAG }}
+
+    - name: Compile binary and demos
+      run: |
+        docker run --rm \
+          --volume "$(pwd)/build:/root/choosegoose/build" \
+          ${{ env.DOCKER_TAG }} \
+          bash -c "source cross_compilation_env.sh && make choosegoose rg-demos"
 
     - name: Prepare artifacts
       id: prepare-artifacts
