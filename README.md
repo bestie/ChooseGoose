@@ -8,22 +8,34 @@ Originally created for GarlicOS running on the Anbernic RG35XX handheld gaming s
 
 ## Features
 
-* Customizable background, colors and font
+* Script friendly
+* Customizable background, colors, typeface, text sizes, margins, padding
+* Selection filtering (keyboard only)
 * Joypad and keyboard support
 * Works on small Linux devices like RG35XXs, Raspberry Pis, and macOS too
-* Embedded font and background
-* Shell script friendly
-* Inactivity timeout
-* Fun and a bit silly
+* Embedded default font and background image
+* Inactivity timeout (quits after n ms with no input)
+* Fun! (Also silly)
 
 ## Usage
 
 Given a newline separated list of items on stdin, ChooseGoose will present the user with an interactive menu and output their selection on stdout.
 
-To present a list of files from the current directory and echo the user's selection with a message:
-
+Select a file from the current directory (outputs to stdout)
+```bash
+$ ls | choosegoose
+MY_SELECTED_FILE.md # or whatever you chose
 ```
-$ ls -1 | choosegoose | xargs -I{} echo "You chose `{}`"
+
+Create an arbitrary list of items and capture the selection in a variable:
+```sh
+choice=$(printf "Duck\nGoose\nMoose" | choosegoose)
+echo "You picked: $choice" # You should always choose 'Goose' of course.
+```
+
+Select a movie file and play with VLC
+```bash
+$ ls *.mp4 | choosegoose --hide-file-extensions | xargs vlc --play-and-exit 
 ```
 
 Use the following command line options to customize:
