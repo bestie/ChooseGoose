@@ -89,8 +89,8 @@ install: $(TARGET)
 .PHONY: goose
 goose: $(TARGET)
 
-.PHONY: all
-all: compile_flags.txt docker-compile docker-compile-rg35xx rg-demos
+.PHONY: rg35xx
+rg35xx: compile_flags.txt docker-compile-rg35xx rg-demos
 
 .PHONY: demo
 demo: $(TARGET)

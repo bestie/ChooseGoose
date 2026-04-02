@@ -11,6 +11,30 @@ on:
     branches: ["main"]
 
 jobs:
+
+  build-RG35XX:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_TAG: choosegoose:${{ github.ref_name }}-${{ github.sha }}
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Build the Docker image
+      run: make rg35xx
+
+    - name: Prepare artifacts
+      id: prepare-artifacts
+      run: |
+        tar czf Linux-arm-uclibcgnueabi.tar.gz build/Linux-arm-uclibcgnueabi/bin
+        tar czf RG35XX.tar.gz build/RG35XX
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v6
+      with:
+        name: Linux-artifacts
+        path: "*.tar.gz"
+
   build-macos:
     runs-on: macos-latest
 
@@ -54,15 +78,32 @@ jobs:
           tarfile="$platform.tar.gz" 
           tar czf "$tarfile" "build/$platform/bin"
 
-      - name: Upload binaries
+      - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
           name: macos-binaries
           path: "*.tar.gz"
 
-      - name: Publish release binaries
-        uses: softprops/action-gh-release@v2
-        if: github.ref_type == 'tag'
+  release:
+    needs: [build-RG35XX, build-macos]
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v6
         with:
-          files: |
-            *.tar.gz
+          path: artifacts
+
+      - name: Flatten artifacts
+        run: |
+          mkdir dist
+          find artifacts -type f -name "*.tar.gz" -exec cp {} dist/ \;
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.tar.gz
