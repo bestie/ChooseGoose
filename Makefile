@@ -38,7 +38,7 @@ ifeq ($(OS), Darwin)
 		-framework ApplicationServices \
     -Wl,-rpath,@executable_path/../Frameworks
 
-	DEPENDENCY_INSTALL_CMD = ./static-compile-deps.sh
+	DEPENDENCY_INSTALL_CMD = bash ./static-compile-deps.sh
 else # Linux
 	PREFIX=/usr
 
@@ -114,7 +114,7 @@ compile_flags.txt: Makefile
 
 .PHONY: install-dependencies
 install-dependencies:
-	bash -l -c "$(DEPENDENCY_INSTALL_CMD)"
+	bash -c "$(DEPENDENCY_INSTALL_CMD)"
 
 .PHONY: echo-build-dir
 echo-build-dir:

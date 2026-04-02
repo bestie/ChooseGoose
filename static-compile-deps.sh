@@ -34,6 +34,9 @@ function libpng() {
 
   make -j$jobs
   make install
+
+  export LIBPNG_CFLAGS="-I$PREFIX/include"
+  export LIBPNG_LIBS="-L$PREFIX/lib -lpng"
 }
 
 function sdl() {
@@ -63,7 +66,9 @@ function freetype() {
     --with-png=yes \
     --without-harfbuzz \
     --without-bzip2 \
-    --prefix="$PREFIX"
+    --prefix="$PREFIX" \
+    LIBPNG_CFLAGS="$LIBPNG_CFLAGS" \
+    LIBPNG_LIBS="$LIBPNG_LIBS"
 
   make -j$(sysctl -n hw.ncpu)
   make install
@@ -97,8 +102,6 @@ function sdl_ttf() {
 function sdl_image() {
   export CPPFLAGS="-I$PREFIX/include"
   export LDFLAGS="-L$PREFIX/lib -lpng $MACOS_FRAMEWORKS"
-  export LIBPNG_CFLAGS="$CPPFLAGS"
-  export LIBPNG_LIBS="-L$PREFIX/lib -lpng -lz"
 
   ls SDL_image || git clone https://github.com/libsdl-org/SDL_image.git
 
@@ -135,13 +138,32 @@ function sdl_image() {
 }
 
 cd $BASE_DIR
-
+echo""
+echo "🌅 Compiling libpng 🤺"
 libpng
+echo "✅ libpng"
+echo ""
 cd $BASE_DIR
+echo ""
+echo "⌨️ Compiling freetype 🤺"
 freetype
+echo "✅ freetype"
+echo ""
 cd $BASE_DIR
+echo ""
+echo "📹 Compiling SDL 🤺"
 sdl
+echo "✅ SDL (base)"
+echo ""
 cd $BASE_DIR
+echo ""
+echo "🆎 Compiling SDL TTF 🤺"
 sdl_ttf
+echo "✅ SDL TTF"
+echo ""
 cd $BASE_DIR
+echo ""
+echo "🌅 Compiling SDL image 🤺"
 sdl_image
+echo "✅ SDL image"
+echo ""
