@@ -116,9 +116,9 @@ compile_flags.txt: Makefile
 install-dependencies:
 	bash -c "$(DEPENDENCY_INSTALL_CMD)"
 
-.PHONY: echo-build-dir
-echo-build-dir:
-	@echo $(BUILD_DIR)
+.PHONY: echo-platform
+echo-platform:
+	@echo $(PLATFORM)
 
 .PHONY: echo-bin-path
 echo-bin-path:

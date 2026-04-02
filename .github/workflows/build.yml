@@ -67,22 +67,26 @@ jobs:
       - name: Compile app
         run: |
           make choosegoose
-          binpath=$(make echo-bin-path)
-          mkdir -p build/dist
-          cp -r build/Darwin* build/dist
 
       - name: Smoke test
         run: bash smoke-test.sh
+
+      - name: Prepare artifacts
+        id: prepare-artifacts
+        run: |
+          platform=$(make echo-platform)
+          tarfile="$platform.tar.gz" 
+          tar czf "$tarfile" "build/$platform"
 
       - name: Upload binaries
         uses: actions/upload-artifact@v6
         with:
           name: macos-binaries
-          path: build/dist/*
+          path: *.tar.gz
 
       - name: Publish release binaries
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
           files: |
-            build/dist/*
+            *.tar.gz
