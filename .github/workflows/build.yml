@@ -68,6 +68,55 @@ jobs:
         name: Linux-arm-uclibcgnueabi
         path: Linux-arm-uclibcgnueabi.tar.gz
 
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Cache dependencies
+        uses: actions/cache@v5
+        id: cache-deps
+        with:
+          path: ./vendor
+          key: linux-${{ hashFiles('static-compile-deps.sh') }}
+
+      - name: Compile dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          bash static-compile-deps.sh
+
+      - name: Cache font
+        uses: actions/cache@v5
+        id: cache-font
+        with:
+          path: ./build/font
+          key: font
+
+      - name: Download font
+        run: |
+          make font-download
+
+      - name: Compile app
+        run: |
+          make choosegoose
+
+      - name: Smoke test
+        run: bash smoke-test.sh
+
+      - name: Prepare artifacts
+        id: prepare-artifacts
+        run: |
+          platform=$(make echo-platform)
+          tarfile="$platform.tar.gz" 
+          tar czf "$tarfile" "build/$platform/bin"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: linux-binaries
+          path: "*.tar.gz"
+
   build-macos:
     runs-on: macos-latest
 
@@ -79,7 +128,7 @@ jobs:
         id: cache-deps
         with:
           path: ./vendor
-          key: ${{ hashFiles('static-compile-deps.sh') }}
+          key: macos-${{ hashFiles('static-compile-deps.sh') }}
 
       - name: Compile dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
