@@ -2,18 +2,13 @@
 
 ## Unreleased
 
+
+## v1.1.0 - 2026-04-02
+
 ### Added
+* Selection filtering
 * Static binary compilation for MacOS
 * MacOS GitHub build action
-
-### Removed
-Nothing
-
-### Changed
-N/A
-
-### Fixed
-N/A
 
 ## v1.0.0
 
