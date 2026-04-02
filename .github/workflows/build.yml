@@ -38,7 +38,7 @@ jobs:
     - name: Upload binary
       uses: actions/upload-artifact@v6
       with:
-        name: RG35XX
+        name: Linux-arm-uclibcgnueabi
         path: Linux-arm-uclibcgnueabi.tar.gz
 
   build-macos:
