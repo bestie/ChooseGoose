@@ -82,7 +82,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: macos-binaries
-          path: *.tar.gz
+          path: "*.tar.gz"
 
       - name: Publish release binaries
         uses: softprops/action-gh-release@v2
