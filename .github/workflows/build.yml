@@ -85,5 +85,5 @@ jobs:
         if: github.ref_type == 'tag'
         with:
           files: |
-          path: ${{ steps.compile-app.outputs.binpath }}
             build/Darwin**/*
+            ${{ steps.compile-app.outputs.binpath }}
