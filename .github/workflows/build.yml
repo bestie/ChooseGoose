@@ -99,6 +99,11 @@ jobs:
       contents: write
 
     steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: CHANGELOG.md
+          fetch-depth: 1
+
       - name: Download all artifacts
         uses: actions/download-artifact@v6
         with:
