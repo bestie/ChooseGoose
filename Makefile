@@ -89,8 +89,8 @@ install: $(TARGET)
 .PHONY: goose
 goose: $(TARGET)
 
-.PHONY: all
-all: compile_flags.txt docker-compile docker-compile-rg35xx rg-demos
+.PHONY: rg35xx
+rg35xx: compile_flags.txt docker-compile-rg35xx rg-demos
 
 .PHONY: demo
 demo: $(TARGET)
@@ -116,9 +116,9 @@ compile_flags.txt: Makefile
 install-dependencies:
 	bash -c "$(DEPENDENCY_INSTALL_CMD)"
 
-.PHONY: echo-build-dir
-echo-build-dir:
-	@echo $(BUILD_DIR)
+.PHONY: echo-platform
+echo-platform:
+	@echo $(PLATFORM)
 
 .PHONY: echo-bin-path
 echo-bin-path:

@@ -1,35 +1,72 @@
 name: Build
 
+permissions:
+  contents: write
+
 on:
   push:
-    branches: '*'
+    branches: ["*"]
+    tags: ["v*"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+
+env:
+  DOCKER_TAG: choosegoose:latest
 
 jobs:
-
-  build:
+  build-crosscomp-image:
     runs-on: ubuntu-latest
-    env:
-      DOCKER_TAG: choosegoose:${{ github.ref_name }}-${{ github.sha }}
+    steps:
+    - uses: actions/checkout@v6
+    - uses: bestie/libnjkafka/.github/actions/docker-gha-cache/build@main
+      with:
+        tag: ${{ env.DOCKER_TAG }}
+
+  build-RG35XX:
+    runs-on: ubuntu-latest
+    needs: ["build-crosscomp-image"]
 
     steps:
     - uses: actions/checkout@v6
 
-    - name: Build the Docker image
-      run: make all
+    - uses: bestie/libnjkafka/.github/actions/docker-gha-cache/restore@main
+      with:
+        tag: ${{ env.DOCKER_TAG }}
 
-    - name: Upload Linux binaries
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '4.0'
+
+    - name: Compile binary
+      run: |
+        mkdir build
+        docker run --rm \
+          --volume "$(pwd):/workdir" \
+          --workdir "/workdir" \
+          ${{ env.DOCKER_TAG }} \
+          bash -c "source cross_compilation_env.sh && make choosegoose"
+
+    - name: Compile demos
+      run: |
+        make rg-demos
+
+    - name: Prepare artifacts
+      id: prepare-artifacts
+      run: |
+        tar czf Linux-arm-uclibcgnueabi.tar.gz build/Linux-arm-uclibcgnueabi/bin
+        tar czf RG35XX.tar.gz build/RG35XX
+
+    - name: Upload RG35XX artifacts
       uses: actions/upload-artifact@v6
       with:
-        name: linux-binaries
-        path: build/Linux*/bin
+        name: RG35XX
+        path: RG35XX.tar.gz
 
-    - name: Upload RG35XX demos
+    - name: Upload binary
       uses: actions/upload-artifact@v6
       with:
-        name: RG35XX-demos
-        path: build/RG35XX/demos
+        name: Linux-arm-uclibcgnueabi
+        path: Linux-arm-uclibcgnueabi.tar.gz
 
   build-macos:
     runs-on: macos-latest
@@ -60,15 +97,58 @@ jobs:
         run: |
           make font-download
 
-      - name: Build
+      - name: Compile app
         run: |
-          make goose
+          make choosegoose
 
       - name: Smoke test
         run: bash smoke-test.sh
 
-      - name: Upload build artifacts
+      - name: Prepare artifacts
+        id: prepare-artifacts
+        run: |
+          platform=$(make echo-platform)
+          tarfile="$platform.tar.gz" 
+          tar czf "$tarfile" "build/$platform/bin"
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: macos-arm64-binary
-          path: build/Darwin*/bin
+          name: macos-binaries
+          path: "*.tar.gz"
+
+  release:
+    needs: [build-RG35XX, build-macos]
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: CHANGELOG.md
+          fetch-depth: 1
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: artifacts
+
+      - name: Flatten artifacts
+        run: |
+          mkdir dist
+          find artifacts -type f -name "*.tar.gz" -exec cp {} dist/ \;
+
+      - name: Get the release notes
+        run: |
+          cat CHANGELOG.md | sed -n '/## v[0-9]/,/## v[0-9]/p' | sed '$d' > release-notes.md
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.tar.gz
+          body_path: release-notes.md
+          make_latest: true
+
