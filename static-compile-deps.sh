@@ -2,7 +2,7 @@
 
 set -ex
 
-jobs=$(sysctl -n hw.ncpu)
+jobs=${JOBS:-4}
 mkdir -p ./vendor/build
 PREFIX=$(readlink -f ./vendor/build)
 BASE_DIR=$(readlink -f ./vendor)
@@ -70,7 +70,7 @@ function freetype() {
     LIBPNG_CFLAGS="$LIBPNG_CFLAGS" \
     LIBPNG_LIBS="$LIBPNG_LIBS"
 
-  make -j$(sysctl -n hw.ncpu)
+  make -j$jobs
   make install
 }
 
