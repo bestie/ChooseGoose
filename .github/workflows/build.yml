@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
-    - uses: bestie/libnjkafka/.github/actions/docker-gha-cache/build@main
+    - uses: bestie/docker-gha-cache/build@main
       with:
         tag: ${{ env.DOCKER_TAG }}
 
@@ -29,7 +29,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
-    - uses: bestie/libnjkafka/.github/actions/docker-gha-cache/restore@main
+    - uses: bestie/docker-gha-cache/restore@main
       with:
         tag: ${{ env.DOCKER_TAG }}
 
