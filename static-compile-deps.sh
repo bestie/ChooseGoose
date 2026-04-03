@@ -32,14 +32,13 @@ else
   PLATFORM_LIBS=""
 fi
 
-# cd $DOWNLOADS_DIR
-# curl --fail -LO https://zlib.net/zlib-1.3.2.tar.gz
-# curl --fail -LO https://download.sourceforge.net/libpng/libpng-1.6.56.tar.gz
-# curl --fail -LO https://download.savannah.gnu.org/releases/freetype/freetype-2.13.2.tar.gz
-# curl --fail --output SDL-1.2.tar.gz -L https://github.com/libsdl-org/SDL-1.2/archive/refs/heads/main.tar.gz
-# curl --fail --output  SDL_image.tar.gz -L https://github.com/libsdl-org/SDL_image/archive/refs/heads/SDL-1.2.tar.gz
-# curl --fail --output SDL_ttf.tar.gz -L https://github.com/libsdl-org/SDL_ttf/archive/refs/heads/SDL-1.2.tar.gz
-# exit
+cd $DOWNLOADS_DIR
+curl --fail -LO https://zlib.net/zlib-1.3.2.tar.gz
+curl --fail -LO https://download.sourceforge.net/libpng/libpng-1.6.56.tar.gz
+curl --fail -LO https://download.savannah.gnu.org/releases/freetype/freetype-2.13.2.tar.gz
+curl --fail --output SDL-1.2.tar.gz -L https://github.com/libsdl-org/SDL-1.2/archive/refs/heads/main.tar.gz
+curl --fail --output  SDL_image.tar.gz -L https://github.com/libsdl-org/SDL_image/archive/refs/heads/SDL-1.2.tar.gz
+curl --fail --output SDL_ttf.tar.gz -L https://github.com/libsdl-org/SDL_ttf/archive/refs/heads/SDL-1.2.tar.gz
 
 function zlib() {
   cp -r $DOWNLOADS_DIR/zlib* . && tar xf zlib-1.3.2.tar.gz
