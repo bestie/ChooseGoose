@@ -90,13 +90,35 @@ Use the following command line options to customize:
 | A                 | confirm selection
 | B                 | exit(0) with no selection
 
-## RG35XX Installation
+
+## Installation on macOS
+
+Homebrew will quickly install a statically compiled binary with all the SDL dependencies baked in.
+Currently only supporting Apple Silicon. Intel builds in the works.
+
+```sh
+brew tap bestie/choosegoose
+brew install choosegoose
+```
+
+## Installation on GarlicOS
 
 Check out the GarlicOS Game and Video Browser apps.
 
 To install and try it out, go to the [releases page](../../releases), download and unzip RG35XX-demos.zip, and copy-paste over or merge into ROMS directory.
 
 ChooseGoose has no dependencies beyond SDL 1.2 which is already on the device so you can just grab the binary from the demo zip and go play.
+
+## Installation on Linux
+
+Relatively easy on Debian variants, install SDL1.2 and compatible SDL_image, SDL_ttf versions.
+
+Compile.
+```sh
+make goose
+```
+
+Take the binary from build/Linux-your_arch-your_libc/bin/choosegoose and put it where you like.
 
 ## Things You Could Build With It
 
