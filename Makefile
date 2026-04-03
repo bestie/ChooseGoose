@@ -10,25 +10,26 @@ endif
 
 BUILD_DIR = build/$(PLATFORM)
 
+VENDOR_PREFIX := build/$(PLATFORM)/vendor/build
+
+CFLAGS += -g -std=c11 -Wall \
+					-Iinclude -Ibuild \
+					-I$(VENDOR_PREFIX)/include \
+					-I$(VENDOR_PREFIX)/include/SDL
+
+LDFLAGS += $(VENDOR_PREFIX)/obj/libSDL_ttf.o \
+	$(VENDOR_PREFIX)/lib/libSDL_image.a \
+	$(VENDOR_PREFIX)/lib/libSDLmain.a \
+	$(VENDOR_PREFIX)/lib/libSDL.a \
+	$(VENDOR_PREFIX)/lib/libfreetype.a \
+	$(VENDOR_PREFIX)/lib/libpng.a \
+  $(VENDOR_PREFIX)/lib/libz.a \
+	-lm
+
 ifeq ($(OS), Darwin)
 	PREFIX=/opt/homebrew
 
-	VENDOR_PREFIX := vendor/build
-
-	CFLAGS += -g -std=c11 -Wall \
-						-Iinclude -Ibuild \
-						-I$(VENDOR_PREFIX)/include \
-						-I$(VENDOR_PREFIX)/include/SDL
-
-	LDFLAGS += \
-		$(VENDOR_PREFIX)/lib/libfreetype.a \
-		$(VENDOR_PREFIX)/lib/libpng.a \
-		$(VENDOR_PREFIX)/lib/libSDL.a \
-		$(VENDOR_PREFIX)/lib/libSDLmain.a \
-		$(VENDOR_PREFIX)/lib/libSDL_image.a \
-		$(VENDOR_PREFIX)/obj/libSDL_ttf.o \
-		$(shell pkg-config --libs libbrotlidec zlib) \
-		-framework Cocoa \
+	LDFLAGS += -framework Cocoa \
 		-framework CoreFoundation \
 		-framework AudioUnit \
 		-framework CoreAudio \
@@ -37,20 +38,8 @@ ifeq ($(OS), Darwin)
 		-framework Carbon \
 		-framework ApplicationServices \
     -Wl,-rpath,@executable_path/../Frameworks
-
-	DEPENDENCY_INSTALL_CMD = bash ./static-compile-deps.sh
 else # Linux
 	PREFIX=/usr
-
-  SDL_PKGS = sdl SDL_image SDL_ttf
-
-	CFLAGS += -g -std=c11 -Wall \
-						-Iinclude -Ibuild \
-						$(shell pkg-config --cflags $(SDL_PKGS))
-
-	LDFLAGS += $(shell pkg-config --libs $(SDL_PKGS))
-
-	DEPENDENCY_INSTALL_CMD = apt-get install -y libcriterion-dev libsdl1.2-dev libsdl-ttf2.0-dev libsdl-image1.2-dev
 endif
 
 CC ?= $(CROSS_COMPILE)gcc
@@ -111,10 +100,6 @@ clean:
 
 compile_flags.txt: Makefile
 	echo $(CFLAGS) | tr ' ' '\n' > $@
-
-.PHONY: install-dependencies
-install-dependencies:
-	bash -c "$(DEPENDENCY_INSTALL_CMD)"
 
 .PHONY: echo-platform
 echo-platform:
