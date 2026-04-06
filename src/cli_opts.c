@@ -6,15 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-static Color parse_color_from_hex(const char *hex) {
-    Color color;
-    sscanf(hex, "%2x%2x%2x", &color.r, &color.g, &color.b);
+static Color* parse_color_from_hex(const char *hex) {
+    Color* color = malloc(sizeof(Color));
+    sscanf(hex, "%2x%2x%2x", &color->r, &color->g, &color->b);
     return color;
-}
-
-static Color no_color(void) {
-    Color c = { -1, -1, -1 };
-    return c;
 }
 
 static bool parsebool(char *string) {
@@ -46,9 +41,9 @@ Config* default_config() {
     config->background_color = parse_color_from_hex("00FFFF");
     config->text_color = parse_color_from_hex("000000");
     config->text_selected_color = parse_color_from_hex("FF0000");
-    config->text_selected_background_color = no_color();
+    config->text_selected_background_color = NULL;
     config->title_font_size = 28;
-    config->user_inactivity_timeout_ms = false;
+    config->user_inactivity_timeout_ms = 0;
     config->key_repeat_delay_ms = 400;
     config->key_repeat_interval_ms = 50;
     config->menu_item_padding = 2;
@@ -94,15 +89,15 @@ void print_usage(void) {
     fprintf(stdout, "Usage: choosegoose --option=value\n");
     fprintf(stdout, "\n");
     fprintf(stdout, "Options:\n");
-    fprintf(stdout, "  --help                                   In pixels. Display this message.\n");
+    fprintf(stdout, "  --help                                   Display this message.\n");
     fprintf(stdout, "  --screen-width=N                         In pixels. Default 640.\n");
     fprintf(stdout, "  --screen-height=N                        In pixels. Default 480.\n");
     fprintf(stdout, "  --bits-per-pixel=N                       In pixels. Default 32.\n");
     fprintf(stdout, "  --title=TITLE                            Title text appears with extra padding and can have a different font size.\n");
     fprintf(stdout, "  --font=FILEPATH                          Path to a custom true type font file used for all text.\n");
     fprintf(stdout, "  --background-image=FILEPATH|DEFAULT      Path to a PNG image or DEFAULT for the built-in goose.\n");
-    fprintf(stdout, "  --font-size=N                            In pixels. Default 10.\n");
-    fprintf(stdout, "  --title-font-size=N                      In pixels. Default 10.\n");
+    fprintf(stdout, "  --font-size=N                            In pixels. Default 22.\n");
+    fprintf(stdout, "  --title-font-size=N                      In pixels. Default 28.\n");
     fprintf(stdout, "  --top-padding=N                          In pixels. Default 10.\n");
     fprintf(stdout, "  --bottom-padding=N                       In pixels. Default 10.\n");
     fprintf(stdout, "  --left-padding=N                         In pixels. Default 10.\n");
@@ -119,6 +114,7 @@ void print_usage(void) {
     fprintf(stdout, "  --text-color=RRGGBB                      \n");
     fprintf(stdout, "  --text-selected-color=RRGGBB             A different color for the selected item text.\n");
     fprintf(stdout, "  --text-selected-background-color=RRGGBB  A solid background color for the selected item text.\n");
+    fprintf(stdout, "  --cover-images-dir=FILEPATH              Directory containing cover images for menu items. To display the image the filename must match the item text with '.png'.\n");
     fprintf(stdout, "  --log-file=FILEPATH|stderr|stdout        Log debug events to a file, stderr or stdout, though stdout is probably not a good idea.\n");
     fprintf(stdout, "\n");
     fprintf(stdout, "  Colors are CSS-style, 6 digit hexadecimal but without the leading '#' character\n");
@@ -131,34 +127,34 @@ void print_usage(void) {
 
 void parse_command_line_options(int argc, char **argv, Config *config) {
     static struct option long_options[] = {
-        {"help", no_argument, 0, 0},
-        {"screen-width", required_argument, 0, 0},
-        {"screen-height", required_argument, 0, 0},
-        {"bits-per-pixel", required_argument, 0, 0},
-        {"title", required_argument, 0, 0},
-        {"font", required_argument, 0, 0},
-        {"background-image", required_argument, 0, 0},
-        {"font-size", required_argument, 0, 0},
-        {"top-padding", required_argument, 0, 0},
-        {"bottom-padding", required_argument, 0, 0},
-        {"left-padding", required_argument, 0, 0},
-        {"right-padding", required_argument, 0, 0},
-        {"text-selected-background-color", required_argument, 0, 0},
-        {"start-at-nth", required_argument, 0, 0},
-        {"hide-file-extensions", required_argument, 0, 0},
-        {"prefix-with-number", required_argument, 0, 0},
-        {"background-color", required_argument, 0, 0},
-        {"text-color", required_argument, 0, 0},
-        {"text-selected-color", required_argument, 0, 0},
-        {"title-font-size", required_argument, 0, 0},
-        {"log-file", required_argument, 0, 0},
-        {"user-inactivity-timeout-ms", required_argument, 0, 0},
-        {"key-repeat-delay-ms", required_argument, 0, 0},
-        {"key-repeat-interval-ms", required_argument, 0, 0},
-        {"menu-item-padding", required_argument, 0, 0},
-        {"menu-item-margin", required_argument, 0, 0},
-        {"cover-images-dir", required_argument, 0, 0},
-        {0, 0, 0, 0}};
+        {"help", no_argument, 0, 0},                                 //   0
+        {"screen-width", required_argument, 0, 0},                   //   1
+        {"screen-height", required_argument, 0, 0},                  //   2
+        {"bits-per-pixel", required_argument, 0, 0},                 //   3
+        {"title", required_argument, 0, 0},                          //   4
+        {"font", required_argument, 0, 0},                           //   5
+        {"background-image", required_argument, 0, 0},               //   6
+        {"font-size", required_argument, 0, 0},                      //   7
+        {"top-padding", required_argument, 0, 0},                    //   8
+        {"bottom-padding", required_argument, 0, 0},                 //   9
+        {"left-padding", required_argument, 0, 0},                   //  10
+        {"right-padding", required_argument, 0, 0},                  //  11
+        {"text-selected-background-color", required_argument, 0, 0}, //  12
+        {"start-at-nth", required_argument, 0, 0},                   //  13
+        {"hide-file-extensions", required_argument, 0, 0},           //  14
+        {"prefix-with-number", required_argument, 0, 0},             //  15
+        {"background-color", required_argument, 0, 0},               //  16
+        {"text-color", required_argument, 0, 0},                     //  17
+        {"text-selected-color", required_argument, 0, 0},            //  18
+        {"title-font-size", required_argument, 0, 0},                //  19
+        {"log-file", required_argument, 0, 0},                       //  20
+        {"user-inactivity-timeout-ms", required_argument, 0, 0},     //  21
+        {"key-repeat-delay-ms", required_argument, 0, 0},            //  22
+        {"key-repeat-interval-ms", required_argument, 0, 0},         //  23
+        {"menu-item-padding", required_argument, 0, 0},              //  24
+        {"menu-item-margin", required_argument, 0, 0},               //  25
+        {"cover-images-dir", required_argument, 0, 0},               //  26
+        {0, 0, 0, 0}};                                                         
 
     bool debug = false;
     if (getenv("DEBUG") && strcmp(getenv("DEBUG"), "1") == 0) {

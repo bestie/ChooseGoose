@@ -230,15 +230,15 @@ void timeout(int user_inactivity_timeout_ms) {
     quit(124);
 }
 
-SDL_Surface* create_text_surface(char *text, Color color, TTF_Font *font) {
-    SDL_Color text_color = {color.r, color.g, color.b, SDL_UNUSED};
+SDL_Surface* create_text_surface(char *text, Color* color, TTF_Font *font) {
+    SDL_Color text_color = {color->r, color->g, color->b, SDL_UNUSED};
 
     SDL_Surface *text_surface = sdl.ttf_rendertext_blended(font, text, text_color);
     return text_surface;
 }
 
 SDL_Surface** create_menu_item(Config* config, State* state, char *text, int selected) {
-    Color text_color;
+    Color* text_color;
 
     if (selected) {
         text_color = config->text_selected_color;
@@ -254,10 +254,10 @@ SDL_Surface** create_menu_item(Config* config, State* state, char *text, int sel
     int menu_item_height = state->font_pixel_height + config->menu_item_padding * 2;
     SDL_Surface* text_bg_surface;
 
-    if (selected && config->text_selected_background_color.r > -1) {
+    if (selected && config->text_selected_background_color) {
         text_bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, menu_item_width, menu_item_height, config->bits_per_pixel, 0,0,0,0);
-        Color bg = config->text_selected_background_color;
-        Uint32 sdl_bg_color = SDL_MapRGB(state->screen->format, bg.r, bg.g, bg.b);
+        Color* bg = config->text_selected_background_color;
+        Uint32 sdl_bg_color = SDL_MapRGB(text_bg_surface->format, bg->r, bg->g, bg->b);
         SDL_Rect fillRect = { 0, 0, text_bg_surface->w, text_bg_surface->h };
         SDL_FillRect(text_bg_surface, &fillRect, sdl_bg_color);
     } else {
@@ -621,8 +621,8 @@ void first_render(Config* config, State* state) {
     set_title(config, state);
 
     state->background_color =
-        SDL_MapRGB(state->screen->format, config->background_color.r,
-                   config->background_color.g, config->background_color.b);
+        SDL_MapRGB(state->screen->format, config->background_color->r,
+                   config->background_color->g, config->background_color->b);
 
     state->menu_item_height = state->font_pixel_height + 2*config->menu_item_padding;
     state->menu_height = config->screen_height - (config->top_padding + config->bottom_padding + state->title_height);
