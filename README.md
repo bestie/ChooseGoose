@@ -52,20 +52,26 @@ Use the following command line options to customize:
   --title=TITLE                            Title text appears with extra padding and can have a different font size.
   --font=FILEPATH                          Path to a custom true type font file used for all text.
   --background-image=FILEPATH|DEFAULT      Path to a PNG image or DEFAULT for the built-in goose.
-  --font-size=N                            In pixels.
-  --title-font-size=N                      In pixels.
-  --top-padding=N                          In pixels.
-  --bottom-padding=N                       In pixels.
-  --left-padding=N                         In pixels.
-  --right-padding=N                        In pixels.
+  --font-size=N                            In pixels. Default 22.
+  --title-font-size=N                      In pixels. Default 28.
+  --top-padding=N                          In pixels. Default 10.
+  --bottom-padding=N                       In pixels. Default 10.
+  --left-padding=N                         In pixels. Default 10.
+  --right-padding=N                        In pixels. Default 10.
+  --menu-item-padding=N                    Padding around menu text items. Default 2.
+  --menu-item-margin=N                     Space between menu items in pixels. Default 0.
   --start-at-nth=N                         List item to start menu from; default 1 (first), set to 0 for no initial selection.
   --user-inactivity-timeout-ms=N           Quits after N milliseconds if the user has not made an input. Exits with status 124 like GNU timeout.
+  --key-repeat-delay-ms=N                  Delay in milliseconds before key repeat starts. See SDL_EnableKeyRepeat.
+  --key-repeat-interval-ms=N               Interval in milliseconds between key repeats. See SDL_EnableKeyRepeat.
   --hide-file-extensions=true|false        When using files as input and output, extensions can be hidden from the user.
   --prefix-with-number=true|false          Menu items are prepended with their list order number starting at 1.
   --background-color=RRGGBB                Visible when no background image is set and through transparent PNG regions.
-  --text-color=RRGGBB
+  --text-color=RRGGBB                      
   --text-selected-color=RRGGBB             A different color for the selected item text.
   --text-selected-background-color=RRGGBB  A solid background color for the selected item text.
+  --cover-images-dir=FILEPATH              Directory containing cover images for menu items. To display the image the filename must match the item text with '.png'.
+  --log-file=FILEPATH|stderr|stdout        Log debug events to a file, stderr or stdout, though stdout is probably not a good idea.
 ```
 
 ## Button and Key Bindings
