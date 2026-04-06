@@ -126,15 +126,6 @@ make goose
 
 Take the binary from build/Linux-your_arch-your_libc/bin/choosegoose and put it where you like.
 
-## Things You Could Build With It
-
-With a little shell scripting it would be easy to build things like:
-
-* Quiz games
-* Theme switcher
-* Game/Media launchers
-* System admin interfaces
-
 ## Contributing
 
 ChooseGoose is written in C with the ancient SDL1.2 framework and renders to the Linux framebuffer device without hardware support.
