@@ -96,6 +96,32 @@ Use the following command line options to customize:
 | A                 | confirm selection
 | B                 | exit(0) with no selection
 
+## Displaying Cover Images
+
+"Cover images" are background images for individual menu items loaded on the fly from the specified 'cover-images-dir`.
+
+The image file name must match the item text input but have a '.png' file extension. Only PNG is supported.
+
+For example a directory may contain:
+
+```
+|
+|- s01e01.mp4
+|- s01e02.mp4
+|- s01e03.mp4
+|- .imgs
+    |
+    |- s01e01.png
+    |- s01e02.png
+    |- s01e03.png
+
+```
+
+This command will then display the episode list with an individual background image for each one.
+
+```sh
+ls *.mp4 | choosegoose --hide-file-extensions=true --cover-images-dir=.imgs
+```
 
 ## Installation on macOS
 
