@@ -9,6 +9,7 @@ else
 endif
 
 BUILD_DIR = build/$(PLATFORM)
+STATIC ?= 1
 
 ifeq ($(OS), Darwin)
 	PREFIX=/opt/homebrew
@@ -43,8 +44,10 @@ else # Linux
 	VENDOR_PREFIX := vendor/build/$(PLATFORM)
 
 	CFLAGS += -g -std=c11 -Wall -D_GNU_SOURCE \
-						-Iinclude -Ibuild \
-						-I$(VENDOR_PREFIX)/include \
+						-Iinclude -Ibuild
+
+  ifeq ($(STATIC), 1)
+	CFLAGS += -I$(VENDOR_PREFIX)/include \
 						-I$(VENDOR_PREFIX)/include/SDL
 
 	LDFLAGS += \
@@ -55,6 +58,11 @@ else # Linux
 		$(VENDOR_PREFIX)/lib/libfreetype.a \
 		$(VENDOR_PREFIX)/lib/libpng.a \
 		-lz -lX11 -lXext -lpthread -ldl -lm
+  else
+	CFLAGS += $(shell sdl-config --cflags 2>/dev/null)
+	LDFLAGS += $(shell sdl-config --libs 2>/dev/null) \
+		-lSDL_ttf -lSDL_image -lm
+  endif
 endif
 
 # Vendor dependency build configuration
@@ -326,7 +334,11 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+ifeq ($(STATIC), 1)
 $(OBJECTS): $(COMPILED_FONT) $(COMPILED_BG_IMAGE) | $(VENDOR_STAMPS)
+else
+$(OBJECTS): $(COMPILED_FONT) $(COMPILED_BG_IMAGE)
+endif
 
 $(TARGET): $(BUILD_DIR) $(BIN_DIR) $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
@@ -371,11 +383,11 @@ $(DOCKER_BUILD_CACHE_FILE): $(BUILD_DIR) Dockerfile Makefile $(SOURCES)
 
 .PHONY: docker-compile
 docker-compile: $(SOURCES) $(DOCKER_BUILD_CACHE_FILE)
-	docker run --platform linux/amd64 --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) make goose
+	docker run --platform linux/amd64 --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) make STATIC=0 goose
 
 .PHONY: docker-compile-rg35xx
 docker-compile-rg35xx: $(SOURCES) $(DOCKER_BUILD_CACHE_FILE)
-	docker run --platform linux/amd64 --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) bash -c "source cross_compilation_env.sh && make goose"
+	docker run --platform linux/amd64 --rm --volume "$(PROJECT_ROOT)/build:/root/choosegoose/build" $(DOCKER_TAG) bash -c "source cross_compilation_env.sh && make STATIC=0 goose"
 
 .PHONY: docker-shell
 docker-shell: $(DOCKER_BUILD_CACHE_FILE)

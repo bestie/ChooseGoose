@@ -44,7 +44,7 @@ jobs:
           --volume "$(pwd):/workdir" \
           --workdir "/workdir" \
           ${{ env.DOCKER_TAG }} \
-          bash -c "source cross_compilation_env.sh && make choosegoose"
+          bash -c "source cross_compilation_env.sh && make STATIC=0 choosegoose"
 
     - name: Compile demos
       run: |
