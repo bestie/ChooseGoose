@@ -13,7 +13,7 @@ BUILD_DIR = build/$(PLATFORM)
 ifeq ($(OS), Darwin)
 	PREFIX=/opt/homebrew
 
-	VENDOR_PREFIX := vendor/build
+	VENDOR_PREFIX := vendor/build/$(PLATFORM)
 
 	CFLAGS += -g -std=c11 -Wall \
 						-Iinclude -Ibuild \
@@ -42,7 +42,7 @@ ifeq ($(OS), Darwin)
 else # Linux
 	PREFIX=/usr
 
-	VENDOR_PREFIX := vendor/build
+	VENDOR_PREFIX := vendor/build/$(PLATFORM)
 
 	CFLAGS += -g -std=c11 -Wall -D_GNU_SOURCE \
 						-Iinclude -Ibuild \

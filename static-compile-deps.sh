@@ -10,8 +10,15 @@ else
   jobs=$(nproc)
 fi
 
-mkdir -p ./vendor/build
-PREFIX=$(readlink -f ./vendor/build)
+ARCH=$(uname -m)
+if [ "$OS" = "Linux" ]; then
+  PLATFORM="${OS}-${ARCH}-glibc"
+else
+  PLATFORM="${OS}-${ARCH}"
+fi
+
+mkdir -p "./vendor/build/${PLATFORM}"
+PREFIX=$(readlink -f "./vendor/build/${PLATFORM}")
 BASE_DIR=$(readlink -f ./vendor)
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
 export PATH="$PREFIX/bin:$PATH"
