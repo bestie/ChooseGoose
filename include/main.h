@@ -26,7 +26,19 @@ typedef struct {
     char* (*joystick_name)(int device_index);
     SDL_Joystick* (*joystick_open)(int device_index);
     int (*ttf_init)(void);
+    void (*ttf_quit)(void);
     SDL_Surface* (*ttf_rendertext_blended)(TTF_Font *font, const char *text, SDL_Color fg);
+    TTF_Font* (*ttf_open_font)(const char *file, int ptsize);
+    TTF_Font* (*ttf_open_font_rw)(SDL_RWops *src, int freesrc, int ptsize);
+    int (*ttf_font_height)(const TTF_Font *font);
+    void (*ttf_close_font)(TTF_Font *font);
+    void (*img_quit)(void);
+    SDL_Surface* (*img_load)(const char *file);
+    SDL_Surface* (*img_load_rw)(SDL_RWops *src, int freesrc);
+    SDL_RWops* (*rw_from_mem)(void *mem, int size);
+    SDL_Surface* (*create_rgb_surface)(Uint32 flags, int width, int height, int depth, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask);
+    Uint32 (*map_rgb)(const SDL_PixelFormat *fmt, Uint8 r, Uint8 g, Uint8 b);
+    void (*joystick_close)(SDL_Joystick *joystick);
 } SDL_Interface;
 
 SDL_Interface* get_sdl_interface(void);

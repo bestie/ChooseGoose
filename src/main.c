@@ -52,7 +52,19 @@ SDL_Interface sdl = {
     .num_joysticks = SDL_NumJoysticks,
     .joystick_open = SDL_JoystickOpen,
     .ttf_init = TTF_Init,
+    .ttf_quit = TTF_Quit,
     .ttf_rendertext_blended = TTF_RenderText_Blended,
+    .ttf_open_font = TTF_OpenFont,
+    .ttf_open_font_rw = TTF_OpenFontRW,
+    .ttf_font_height = TTF_FontHeight,
+    .ttf_close_font = TTF_CloseFont,
+    .img_quit = IMG_Quit,
+    .img_load = IMG_Load,
+    .img_load_rw = IMG_Load_RW,
+    .rw_from_mem = SDL_RWFromMem,
+    .create_rgb_surface = SDL_CreateRGBSurface,
+    .map_rgb = SDL_MapRGB,
+    .joystick_close = SDL_JoystickClose,
 };
 
 char* str_lower(char* str) {
@@ -72,9 +84,9 @@ void cleanup(void) {
     fflush(output);
     fclose(output);
 
-    TTF_Quit();
-    IMG_Quit();
-    SDL_Quit();
+    sdl.ttf_quit();
+    sdl.img_quit();
+    sdl.quit();
 }
 
 static int exit_code = -1;
@@ -139,11 +151,11 @@ void log_event(const char *format, ...) {
 TTF_Font* load_font(char *font_filepath, int font_size) {
     if (strlen(font_filepath) > 1 && access(font_filepath, R_OK) != -1) {
         log_event("Font loading from %s", font_filepath);
-        return TTF_OpenFont(font_filepath, font_size);
+        return sdl.ttf_open_font(font_filepath, font_size);
     } else {
         log_event("Font file not set or not readable `%s`", font_filepath);
-        SDL_RWops *rw = SDL_RWFromMem(default_font, default_font_len);
-        return TTF_OpenFontRW(rw, 1, font_size);
+        SDL_RWops *rw = sdl.rw_from_mem(default_font, default_font_len);
+        return sdl.ttf_open_font_rw(rw, 1, font_size);
     }
 }
 
@@ -178,7 +190,7 @@ void restore_stderr(void) {
 void init_sdl(Config* config, State* state) {
     log_event("SDL initialization started.");
     if (sdl.init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
-        log_event("Unable to init SDL: %s\n", SDL_GetError());
+        log_event("Unable to init SDL: %s\n", sdl.get_error());
         quit(1);
         return;
     }
@@ -206,7 +218,7 @@ void init_sdl(Config* config, State* state) {
             quit(1);
             return;
         } else {
-            log_event("Joystick opened: %s\n", SDL_JoystickName(0));
+            log_event("Joystick opened: %s\n", sdl.joystick_name(0));
         }
     } else {
         log_event("No joysticks found");
@@ -217,7 +229,7 @@ void init_sdl(Config* config, State* state) {
     state->title_font = load_font(config->font_filepath, config->title_font_size);
     state->font = load_font(config->font_filepath, config->font_size);
 
-    state->font_pixel_height = TTF_FontHeight(state->font);
+    state->font_pixel_height = sdl.ttf_font_height(state->font);
 
     log_event("Font loaded size=%d, font_height=%dpx", config->font_size,
               state->font_pixel_height);
@@ -255,14 +267,14 @@ SDL_Surface** create_menu_item(Config* config, State* state, char *text, int sel
     SDL_Surface* text_bg_surface;
 
     if (selected && config->text_selected_background_color) {
-        text_bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, menu_item_width, menu_item_height, config->bits_per_pixel, 0,0,0,0);
+        text_bg_surface = sdl.create_rgb_surface(SDL_SWSURFACE, menu_item_width, menu_item_height, config->bits_per_pixel, 0,0,0,0);
         Color* bg = config->text_selected_background_color;
-        Uint32 sdl_bg_color = SDL_MapRGB(text_bg_surface->format, bg->r, bg->g, bg->b);
+        Uint32 sdl_bg_color = sdl.map_rgb(text_bg_surface->format, bg->r, bg->g, bg->b);
         SDL_Rect fillRect = { 0, 0, text_bg_surface->w, text_bg_surface->h };
-        SDL_FillRect(text_bg_surface, &fillRect, sdl_bg_color);
+        sdl.fill_rect(text_bg_surface, &fillRect, sdl_bg_color);
     } else {
         // Surface of size zero so two surfaces are always returned
-        text_bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, 0, 0, config->bits_per_pixel, 0,0,0,0);
+        text_bg_surface = sdl.create_rgb_surface(SDL_SWSURFACE, 0, 0, config->bits_per_pixel, 0,0,0,0);
     }
 
     SDL_Surface** menu_item = malloc(sizeof(SDL_Surface*) * 2);
@@ -481,8 +493,8 @@ void render_cover_image(Config* config, State* state) {
 
     if(access(filepath, R_OK) != -1) {
         log_event("Found cover image %s", filepath);
-        SDL_Surface* cover_image = IMG_Load(filepath);
-        SDL_BlitSurface(cover_image, NULL, state->screen, NULL);
+        SDL_Surface* cover_image = sdl.img_load(filepath);
+        sdl.blit_surface(cover_image, NULL, state->screen, NULL);
         sdl.free_surface(cover_image);
     } else {
         log_event("No cover image found for %s", selected_item);
@@ -497,17 +509,17 @@ void render(Config* config, State* state) {
     int menu_max_items = state->menu_max_items;
     int filter_text_height = 0;
 
-    SDL_FillRect(state->screen, NULL, state->background_color);
+    sdl.fill_rect(state->screen, NULL, state->background_color);
     SDL_Surface* background_image = state->background_image;
     if(background_image) {
-        SDL_BlitSurface(background_image, NULL, state->screen, NULL);
+        sdl.blit_surface(background_image, NULL, state->screen, NULL);
     }
 
     render_cover_image(config, state);
 
     if (state->title) {
         SDL_Rect dest = {config->left_padding, config->top_padding, 0, 0};
-        SDL_BlitSurface(state->title, NULL, state->screen, &dest);
+        sdl.blit_surface(state->title, NULL, state->screen, &dest);
     }
 
     if (strlen(filter_query) > 0) {
@@ -515,7 +527,7 @@ void render(Config* config, State* state) {
         sprintf(filter_text, " > %s_", filter_query);
         SDL_Surface* filter_surface = create_text_surface(filter_text, config->text_color, state->font);
         SDL_Rect dest = {config->left_padding, config->top_padding + state->title_height, 0, 0};
-        SDL_BlitSurface(filter_surface, NULL, state->screen, &dest);
+        sdl.blit_surface(filter_surface, NULL, state->screen, &dest);
         sdl.free_surface(filter_surface);
 
         filter_text_height = state->menu_item_height;
@@ -606,13 +618,13 @@ void set_background_image(State* state, char *background_image_filepath) {
     } else if (strcmp(background_image_filepath, "DEFAULT") == 0) {
         log_event("Using default background image\n");
         SDL_RWops *rw =
-            SDL_RWFromMem(default_background_image, default_background_image_len);
-        state->background_image = IMG_Load_RW(rw, 1);
+            sdl.rw_from_mem(default_background_image, default_background_image_len);
+        state->background_image = sdl.img_load_rw(rw, 1);
     } else if (strlen(background_image_filepath) &&
         access(background_image_filepath, R_OK) != -1) {
         log_event("Loading background image `%s`\n",
                   background_image_filepath);
-        state->background_image = IMG_Load(background_image_filepath);
+        state->background_image = sdl.img_load(background_image_filepath);
     }
 }
 
@@ -621,8 +633,8 @@ void first_render(Config* config, State* state) {
     set_title(config, state);
 
     state->background_color =
-        SDL_MapRGB(state->screen->format, config->background_color->r,
-                   config->background_color->g, config->background_color->b);
+        sdl.map_rgb(state->screen->format, config->background_color->r,
+                    config->background_color->g, config->background_color->b);
 
     state->menu_item_height = state->font_pixel_height + 2*config->menu_item_padding;
     state->menu_height = config->screen_height - (config->top_padding + config->bottom_padding + state->title_height);

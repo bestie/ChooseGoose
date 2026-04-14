@@ -1,4 +1,4 @@
-#include "state.h"
+#include "main.h"
 #include <sys/select.h>
 
 #define MAX_MENU_ITEMS 4096
@@ -27,28 +27,29 @@ State* init_state() {
 }
 
 void cleanup_state(State *state) {
+    SDL_Interface* sdl = get_sdl_interface();
     if (state->log_file) {
         fclose(state->log_file);
     }
     if (state->background_image) {
-        SDL_FreeSurface(state->background_image);
+        sdl->free_surface(state->background_image);
     }
     if (state->title) {
-        SDL_FreeSurface(state->title);
+        sdl->free_surface(state->title);
     }
     if (state->screen) {
-        SDL_FreeSurface(state->screen);
+        sdl->free_surface(state->screen);
     }
     if (state->title_font) {
-        TTF_CloseFont(state->title_font);
+        sdl->ttf_close_font(state->title_font);
     }
     if (state->font) {
-        TTF_CloseFont(state->font);
+        sdl->ttf_close_font(state->font);
     }
     if (state->joystick) {
-        SDL_JoystickClose(state->joystick);
+        sdl->joystick_close(state->joystick);
     }
-    SDL_Quit();
+    sdl->quit();
 }
 
 int check_readable(FILE *stream, int timeout_msec)

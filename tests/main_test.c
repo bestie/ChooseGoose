@@ -167,6 +167,62 @@ int mock_sdl_ttf_init(void) {
     return 0;
 }
 
+void mock_sdl_ttf_quit(void) {
+    printf("Mock TTF_Quit called\n");
+}
+
+TTF_Font* mock_sdl_ttf_open_font(const char *file, int ptsize) {
+    printf("Mock TTF_OpenFont called for %s size %d\n", file, ptsize);
+    return NULL;
+}
+
+TTF_Font* mock_sdl_ttf_open_font_rw(SDL_RWops *src, int freesrc, int ptsize) {
+    printf("Mock TTF_OpenFontRW called size %d\n", ptsize);
+    return NULL;
+}
+
+int mock_sdl_ttf_font_height(const TTF_Font *font) {
+    printf("Mock TTF_FontHeight called\n");
+    return 16;
+}
+
+void mock_sdl_ttf_close_font(TTF_Font *font) {
+    printf("Mock TTF_CloseFont called\n");
+}
+
+void mock_sdl_img_quit(void) {
+    printf("Mock IMG_Quit called\n");
+}
+
+SDL_Surface* mock_sdl_img_load(const char *file) {
+    printf("Mock IMG_Load called for %s\n", file);
+    return NULL;
+}
+
+SDL_Surface* mock_sdl_img_load_rw(SDL_RWops *src, int freesrc) {
+    printf("Mock IMG_Load_RW called\n");
+    return NULL;
+}
+
+SDL_RWops* mock_sdl_rw_from_mem(void *mem, int size) {
+    printf("Mock SDL_RWFromMem called\n");
+    return SDL_RWFromMem(mem, size);
+}
+
+SDL_Surface* mock_sdl_create_rgb_surface(Uint32 flags, int width, int height, int depth, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask) {
+    printf("Mock SDL_CreateRGBSurface called %dx%d\n", width, height);
+    return SDL_CreateRGBSurface(flags, width, height, depth, Rmask, Gmask, Bmask, Amask);
+}
+
+Uint32 mock_sdl_map_rgb(const SDL_PixelFormat *fmt, Uint8 r, Uint8 g, Uint8 b) {
+    printf("Mock SDL_MapRGB called\n");
+    return SDL_MapRGB(fmt, r, g, b);
+}
+
+void mock_sdl_joystick_close(SDL_Joystick *joystick) {
+    printf("Mock SDL_JoystickClose called\n");
+}
+
 SDL_Surface* text_surfaces[1024];
 char* text_surface_texts[1024];
 
@@ -199,7 +255,19 @@ SDL_Interface* get_mock_sdl_interface(void) {
     interface->joystick_name = mock_sdl_joystick_name;
     interface->joystick_open = mock_sdl_joystick_open;
     interface->ttf_init = mock_sdl_ttf_init;
+    interface->ttf_quit = mock_sdl_ttf_quit;
     interface->ttf_rendertext_blended = mock_ttf_rendertext_blended;
+    interface->ttf_open_font = mock_sdl_ttf_open_font;
+    interface->ttf_open_font_rw = mock_sdl_ttf_open_font_rw;
+    interface->ttf_font_height = mock_sdl_ttf_font_height;
+    interface->ttf_close_font = mock_sdl_ttf_close_font;
+    interface->img_quit = mock_sdl_img_quit;
+    interface->img_load = mock_sdl_img_load;
+    interface->img_load_rw = mock_sdl_img_load_rw;
+    interface->rw_from_mem = mock_sdl_rw_from_mem;
+    interface->create_rgb_surface = mock_sdl_create_rgb_surface;
+    interface->map_rgb = mock_sdl_map_rgb;
+    interface->joystick_close = mock_sdl_joystick_close;
 
     return interface;
 }
