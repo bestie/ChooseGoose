@@ -37,8 +37,6 @@ ifeq ($(OS), Darwin)
 		-framework Carbon \
 		-framework ApplicationServices \
     -Wl,-rpath,@executable_path/../Frameworks
-
-	DEPENDENCY_INSTALL_CMD = bash ./static-compile-deps.sh
 else # Linux
 	PREFIX=/usr
 
@@ -57,9 +55,38 @@ else # Linux
 		$(VENDOR_PREFIX)/lib/libfreetype.a \
 		$(VENDOR_PREFIX)/lib/libpng.a \
 		-lz -lX11 -lXext -lpthread -ldl -lm
-
-	DEPENDENCY_INSTALL_CMD = bash ./static-compile-deps.sh
 endif
+
+# Vendor dependency build configuration
+VENDOR_DIR := vendor
+STAMP_DIR := $(VENDOR_PREFIX)/.stamps
+JOBS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+ABS_VENDOR_PREFIX := $(abspath $(VENDOR_PREFIX))
+
+ifeq ($(OS), Darwin)
+VENDOR_FRAMEWORKS := -framework AudioToolbox -framework AudioUnit -framework Carbon \
+	-framework Cocoa -framework CoreAudio -framework CoreHaptics -framework CoreServices \
+	-framework CoreVideo -framework ForceFeedback -framework GameController \
+	-framework IOKit -framework Metal -framework OpenGL
+SDL_CONFIGURE_FLAGS := --disable-x11 --disable-video-x11 --enable-video-cocoa
+SDL_TTF_LDFLAGS := -L$(ABS_VENDOR_PREFIX)/lib -liconv
+SDL_TTF_LIBS := -lfreetype $(VENDOR_FRAMEWORKS)
+SDL_IMAGE_LDFLAGS := -L$(ABS_VENDOR_PREFIX)/lib -lpng $(VENDOR_FRAMEWORKS)
+SDL_IMAGE_OBJS := IMG.o IMG_bmp.o IMG_gif.o IMG_jpg.o IMG_lbm.o IMG_pcx.o \
+	IMG_png.o IMG_pnm.o IMG_tga.o IMG_tif.o IMG_webp.o \
+	IMG_xcf.o IMG_xpm.o IMG_xv.o IMG_ImageIO.o
+else
+SDL_CONFIGURE_FLAGS := --enable-video-x11 --disable-video-cocoa --disable-audio
+SDL_TTF_LDFLAGS := -L$(ABS_VENDOR_PREFIX)/lib
+SDL_TTF_LIBS := -lfreetype
+SDL_IMAGE_LDFLAGS := -L$(ABS_VENDOR_PREFIX)/lib -lpng
+SDL_IMAGE_OBJS := IMG.o IMG_bmp.o IMG_gif.o IMG_jpg.o IMG_lbm.o IMG_pcx.o \
+	IMG_png.o IMG_pnm.o IMG_tga.o IMG_tif.o IMG_webp.o \
+	IMG_xcf.o IMG_xpm.o IMG_xv.o
+endif
+
+VENDOR_STAMPS := $(STAMP_DIR)/libpng $(STAMP_DIR)/freetype $(STAMP_DIR)/sdl \
+	$(STAMP_DIR)/sdl_ttf $(STAMP_DIR)/sdl_image
 
 CC ?= $(CROSS_COMPILE)gcc
 CXX ?= $(CROSS_COMPILE)g++
@@ -120,9 +147,11 @@ clean:
 compile_flags.txt: Makefile
 	echo $(CFLAGS) | tr ' ' '\n' > $@
 
-.PHONY: install-dependencies
-install-dependencies:
-	bash -c "$(DEPENDENCY_INSTALL_CMD)"
+.PHONY: install-dependencies vendor-deps clean-vendor
+install-dependencies: vendor-deps
+vendor-deps: $(VENDOR_STAMPS)
+clean-vendor:
+	rm -rf $(VENDOR_PREFIX)
 
 .PHONY: echo-platform
 echo-platform:
@@ -171,6 +200,117 @@ $(FONT_DOWNLOAD):
 	wget https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2 \
 		--directory-prefix=$(FONT_DIR)
 
+### Vendor dependencies (static compilation) ###################################
+
+$(STAMP_DIR):
+	mkdir -p $@
+
+# libpng 1.6.43
+$(STAMP_DIR)/libpng: | $(STAMP_DIR)
+	@echo "==> Building libpng..."
+	cd $(VENDOR_DIR) && \
+		(test -d libpng-1.6.43 || \
+		(curl -LO https://download.sourceforge.net/libpng/libpng-1.6.43.tar.gz && \
+		tar xf libpng-1.6.43.tar.gz))
+	cd $(VENDOR_DIR)/libpng-1.6.43 && \
+		./configure \
+			--prefix="$(ABS_VENDOR_PREFIX)" \
+			--enable-static \
+			--disable-shared && \
+		$(MAKE) -j$(JOBS) && \
+		$(MAKE) install
+	touch $@
+
+# FreeType 2.13.2 (needs libpng)
+$(STAMP_DIR)/freetype: $(STAMP_DIR)/libpng | $(STAMP_DIR)
+	@echo "==> Building freetype..."
+	cd $(VENDOR_DIR) && \
+		(test -d freetype-2.13.2 || \
+		(curl -LO https://download.savannah.gnu.org/releases/freetype/freetype-2.13.2.tar.gz && \
+		tar xf freetype-2.13.2.tar.gz))
+	cd $(VENDOR_DIR)/freetype-2.13.2 && \
+		./configure \
+			--disable-shared \
+			--enable-static \
+			--with-png=yes \
+			--without-harfbuzz \
+			--without-bzip2 \
+			$(if $(filter-out Darwin,$(OS)),--with-brotli=no) \
+			--prefix="$(ABS_VENDOR_PREFIX)" \
+			LIBPNG_CFLAGS="-I$(ABS_VENDOR_PREFIX)/include" \
+			LIBPNG_LIBS="-L$(ABS_VENDOR_PREFIX)/lib -lpng" && \
+		$(MAKE) -j$(JOBS) && \
+		($(MAKE) install || \
+			(test -f $(ABS_VENDOR_PREFIX)/lib/libfreetype.a && \
+			test -d $(ABS_VENDOR_PREFIX)/include/freetype2 && \
+			mkdir -p $(ABS_VENDOR_PREFIX)/lib/pkgconfig && \
+			cp builds/unix/freetype2.pc $(ABS_VENDOR_PREFIX)/lib/pkgconfig/freetype2.pc))
+	touch $@
+
+# SDL 1.2
+$(STAMP_DIR)/sdl: | $(STAMP_DIR)
+	@echo "==> Building SDL..."
+	cd $(VENDOR_DIR) && (test -d SDL-1.2 || git clone https://github.com/libsdl-org/SDL-1.2.git)
+	cd $(VENDOR_DIR)/SDL-1.2 && \
+		./configure \
+			--enable-static \
+			--disable-shared \
+			$(SDL_CONFIGURE_FLAGS) \
+			--prefix="$(ABS_VENDOR_PREFIX)" && \
+		$(MAKE) -j$(JOBS) && \
+		$(MAKE) install
+	touch $@
+
+# SDL_ttf (needs SDL and FreeType)
+$(STAMP_DIR)/sdl_ttf: $(STAMP_DIR)/sdl $(STAMP_DIR)/freetype | $(STAMP_DIR)
+	@echo "==> Building SDL_ttf..."
+	cd $(VENDOR_DIR) && (test -d SDL_ttf || git clone https://github.com/libsdl-org/SDL_ttf.git)
+	cd $(VENDOR_DIR)/SDL_ttf && git checkout SDL-1.2
+	cd $(VENDOR_DIR)/SDL_ttf && \
+		PATH="$(ABS_VENDOR_PREFIX)/bin:$$PATH" \
+		PKG_CONFIG_PATH="$(ABS_VENDOR_PREFIX)/lib/pkgconfig" \
+		CPPFLAGS="-I$(ABS_VENDOR_PREFIX)/include -I$(ABS_VENDOR_PREFIX)/include/freetype2" \
+		SDL_LIBS="-L$(ABS_VENDOR_PREFIX)/lib" \
+		LDFLAGS="$(SDL_TTF_LDFLAGS)" \
+		LIBS="$(SDL_TTF_LIBS)" \
+		./configure \
+			--enable-static \
+			--disable-shared \
+			--with-freetype-prefix="$(ABS_VENDOR_PREFIX)" \
+			--disable-examples \
+			--disable-sdltest \
+			--prefix="$(ABS_VENDOR_PREFIX)" \
+			--with-sdl-prefix="$(ABS_VENDOR_PREFIX)" && \
+		$(MAKE) SDL_ttf.o
+	mkdir -p $(ABS_VENDOR_PREFIX)/obj
+	cp $(VENDOR_DIR)/SDL_ttf/SDL_ttf.o $(ABS_VENDOR_PREFIX)/obj/libSDL_ttf.o
+	cp $(VENDOR_DIR)/SDL_ttf/SDL_ttf.h $(ABS_VENDOR_PREFIX)/include/
+	touch $@
+
+# SDL_image (needs SDL and libpng)
+$(STAMP_DIR)/sdl_image: $(STAMP_DIR)/sdl $(STAMP_DIR)/libpng | $(STAMP_DIR)
+	@echo "==> Building SDL_image..."
+	cd $(VENDOR_DIR) && (test -d SDL_image || git clone https://github.com/libsdl-org/SDL_image.git)
+	cd $(VENDOR_DIR)/SDL_image && git checkout SDL-1.2
+	cd $(VENDOR_DIR)/SDL_image && \
+		PATH="$(ABS_VENDOR_PREFIX)/bin:$$PATH" \
+		PKG_CONFIG_PATH="$(ABS_VENDOR_PREFIX)/lib/pkgconfig" \
+		CPPFLAGS="-I$(ABS_VENDOR_PREFIX)/include" \
+		LDFLAGS="$(SDL_IMAGE_LDFLAGS)" \
+		./configure \
+			--prefix="$(ABS_VENDOR_PREFIX)" \
+			--enable-static \
+			--disable-shared \
+			--enable-png \
+			--disable-sdltest \
+			--disable-tif \
+			--disable-webp && \
+		$(MAKE) $(SDL_IMAGE_OBJS) && \
+		$(AR) rcs libSDL_image.a IMG*.o
+	cp $(VENDOR_DIR)/SDL_image/libSDL_image.a $(ABS_VENDOR_PREFIX)/lib/
+	cp $(VENDOR_DIR)/SDL_image/SDL_image.h $(ABS_VENDOR_PREFIX)/include/
+	touch $@
+
 ### Compile and link ##########################################################
 
 $(OBJ_DIR):
@@ -186,7 +326,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJECTS): $(COMPILED_FONT) $(COMPILED_BG_IMAGE)
+$(OBJECTS): $(COMPILED_FONT) $(COMPILED_BG_IMAGE) | $(VENDOR_STAMPS)
 
 $(TARGET): $(BUILD_DIR) $(BIN_DIR) $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
