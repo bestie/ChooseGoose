@@ -2,7 +2,7 @@ OS ?= $(shell uname -s)
 ARCH ?= $(shell uname -m)
 
 ifeq ($(OS), Linux)
-	LIBC ?= "glibc"
+	LIBC ?= glibc
   PLATFORM := $(OS)-$(ARCH)-$(LIBC)
 else
   PLATFORM := $(OS)-$(ARCH)
@@ -252,6 +252,7 @@ $(STAMP_DIR)/freetype: $(STAMP_DIR)/libpng | $(STAMP_DIR)
 			(test -f $(ABS_VENDOR_PREFIX)/lib/libfreetype.a && \
 			test -d $(ABS_VENDOR_PREFIX)/include/freetype2 && \
 			mkdir -p $(ABS_VENDOR_PREFIX)/lib/pkgconfig && \
+			rm -f $(ABS_VENDOR_PREFIX)/lib/pkgconfig/freetype2.pc && \
 			cp builds/unix/freetype2.pc $(ABS_VENDOR_PREFIX)/lib/pkgconfig/freetype2.pc))
 	touch $@
 
