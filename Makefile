@@ -202,7 +202,7 @@ TEST_EXECUTABLE = $(TEST_BUILD_DIR)/$(PROJECT_SHORT)_tests
 
 .PHONY: test
 test: $(TEST_EXECUTABLE)
-	./$(TEST_EXECUTABLE) --jobs=1
+	SDL_VIDEODRIVER=dummy ./$(TEST_EXECUTABLE) --jobs=1
 
 $(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.c
 	mkdir -p $(TEST_OBJ_DIR)
@@ -211,7 +211,12 @@ $(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.c
 $(TEST_EXECUTABLE): $(TARGET) $(TEST_OBJECTS) $(TEST_SOURCES)
 	echo "Building tests"
 	echo "objects in $(OBJECTS)"
+ifeq ($(OS), Linux)
+	objcopy --localize-symbol=main $(OBJ_DIR)/main.o $(TEST_OBJ_DIR)/main_nomain.o
+	$(CC) $(TEST_OBJECTS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_OBJ_DIR)/main_nomain.o -o $@ -lcriterion $(LDFLAGS)
+else
 	$(CC) $(TEST_OBJECTS) $(OBJECTS) -o $@ -lcriterion $(LDFLAGS)
+endif
 
 ### Docker #####################################################################
 
