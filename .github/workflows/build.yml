@@ -40,11 +40,7 @@ jobs:
     - name: Compile binary
       run: |
         mkdir build
-        docker run --rm \
-          --volume "$(pwd):/workdir" \
-          --workdir "/workdir" \
-          ${{ env.DOCKER_TAG }} \
-          bash -c "source cross_compilation_env.sh && make STATIC=0 choosegoose"
+        make docker-compile
 
     - name: Compile demos
       run: |
