@@ -2,11 +2,19 @@
 
 set -ex
 
-jobs=$(sysctl -n hw.ncpu)
+OS=$(uname -s)
+
+if [ "$OS" = "Darwin" ]; then
+  jobs=$(sysctl -n hw.ncpu)
+else
+  jobs=$(nproc)
+fi
+
 mkdir -p ./vendor/build
 PREFIX=$(readlink -f ./vendor/build)
 BASE_DIR=$(readlink -f ./vendor)
-export PKG_CONFIG_PATH="$PREFIX/lib/pkconfig"
+export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
+export PATH="$PREFIX/bin:$PATH"
 
 MACOS_FRAMEWORKS="-framework AudioToolbox \
 	-framework AudioUnit \
@@ -43,13 +51,24 @@ function sdl() {
   ls SDL-1.2 || git clone https://github.com/libsdl-org/SDL-1.2.git
 
   cd SDL-1.2/
-  ./configure \
-    --disable-x11 \
-    --enable-static \
-    --disable-shared \
-    --disable-video-x11 \
-    --enable-video-cocoa \
-    --prefix="$PREFIX"
+
+  if [ "$OS" = "Darwin" ]; then
+    ./configure \
+      --disable-x11 \
+      --enable-static \
+      --disable-shared \
+      --disable-video-x11 \
+      --enable-video-cocoa \
+      --prefix="$PREFIX"
+  else
+    ./configure \
+      --enable-static \
+      --disable-shared \
+      --enable-video-x11 \
+      --disable-video-cocoa \
+      --disable-audio \
+      --prefix="$PREFIX"
+  fi
 
   make -j$jobs
   make install
@@ -60,18 +79,30 @@ function freetype() {
     && tar xf freetype-2.13.2.tar.gz
   cd freetype-2.13.2
 
+  local extra_flags=""
+  if [ "$OS" != "Darwin" ]; then
+    extra_flags="--with-brotli=no"
+  fi
+
   ./configure \
     --disable-shared \
     --enable-static \
     --with-png=yes \
     --without-harfbuzz \
     --without-bzip2 \
+    $extra_flags \
     --prefix="$PREFIX" \
     LIBPNG_CFLAGS="$LIBPNG_CFLAGS" \
     LIBPNG_LIBS="$LIBPNG_LIBS"
 
-  make -j$(sysctl -n hw.ncpu)
-  make install
+  make -j$jobs
+  make install || {
+    # install may fail on chmod of pkgconfig files on some filesystems;
+    # verify the important artifacts landed then copy .pc file manually
+    test -f $PREFIX/lib/libfreetype.a && test -d $PREFIX/include/freetype2
+    rm -f $PREFIX/lib/pkgconfig/freetype2.pc 2>/dev/null; true
+    cp builds/unix/freetype2.pc $PREFIX/lib/pkgconfig/freetype2.pc
+  }
 }
 
 function sdl_ttf() {
@@ -80,9 +111,15 @@ function sdl_ttf() {
   cd SDL_ttf && git checkout SDL-1.2
 
   export CPPFLAGS="-I$PREFIX/include -I$PREFIX/include/freetype2"
-  export LDFLAGS="-L$PREFIX/lib -liconv"
-  export LIBS="-lfreetype $MACOS_FRAMEWORKS"
   export SDL_LIBS="-L$PREFIX/lib"
+
+  if [ "$OS" = "Darwin" ]; then
+    export LDFLAGS="-L$PREFIX/lib -liconv"
+    export LIBS="-lfreetype $MACOS_FRAMEWORKS"
+  else
+    export LDFLAGS="-L$PREFIX/lib"
+    export LIBS="-lfreetype"
+  fi
 
   ./configure \
     --enable-static \
@@ -101,11 +138,16 @@ function sdl_ttf() {
 
 function sdl_image() {
   export CPPFLAGS="-I$PREFIX/include"
-  export LDFLAGS="-L$PREFIX/lib -lpng $MACOS_FRAMEWORKS"
+
+  if [ "$OS" = "Darwin" ]; then
+    export LDFLAGS="-L$PREFIX/lib -lpng $MACOS_FRAMEWORKS"
+  else
+    export LDFLAGS="-L$PREFIX/lib -lpng"
+  fi
 
   ls SDL_image || git clone https://github.com/libsdl-org/SDL_image.git
 
-  cd SDL_image && git checkout SDL-1.2 \
+  cd SDL_image && git checkout SDL-1.2
 
   ./configure \
       --prefix="$PREFIX" \
@@ -119,7 +161,6 @@ function sdl_image() {
   make IMG.o \
     IMG_bmp.o \
     IMG_gif.o \
-    IMG_ImageIO.o \
     IMG_jpg.o \
     IMG_lbm.o \
     IMG_pcx.o \
@@ -131,6 +172,10 @@ function sdl_image() {
     IMG_xcf.o \
     IMG_xpm.o \
     IMG_xv.o
+
+  if [ "$OS" = "Darwin" ]; then
+    make IMG_ImageIO.o
+  fi
 
   ar rcs libSDL_image.a IMG*.o
   cp libSDL_image.a $PREFIX/lib

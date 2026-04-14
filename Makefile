@@ -42,15 +42,23 @@ ifeq ($(OS), Darwin)
 else # Linux
 	PREFIX=/usr
 
-  SDL_PKGS = sdl SDL_image SDL_ttf
+	VENDOR_PREFIX := vendor/build
 
-	CFLAGS += -g -std=c11 -Wall \
+	CFLAGS += -g -std=c11 -Wall -D_GNU_SOURCE \
 						-Iinclude -Ibuild \
-						$(shell pkg-config --cflags $(SDL_PKGS))
+						-I$(VENDOR_PREFIX)/include \
+						-I$(VENDOR_PREFIX)/include/SDL
 
-	LDFLAGS += $(shell pkg-config --libs $(SDL_PKGS))
+	LDFLAGS += \
+		$(VENDOR_PREFIX)/lib/libSDL_image.a \
+		$(VENDOR_PREFIX)/obj/libSDL_ttf.o \
+		$(VENDOR_PREFIX)/lib/libSDL.a \
+		$(VENDOR_PREFIX)/lib/libSDLmain.a \
+		$(VENDOR_PREFIX)/lib/libfreetype.a \
+		$(VENDOR_PREFIX)/lib/libpng.a \
+		-lz -lX11 -lXext -lpthread -ldl -lm
 
-	DEPENDENCY_INSTALL_CMD = apt-get install -y libcriterion-dev libsdl1.2-dev libsdl-ttf2.0-dev libsdl-image1.2-dev
+	DEPENDENCY_INSTALL_CMD = bash ./static-compile-deps.sh
 endif
 
 CC ?= $(CROSS_COMPILE)gcc
