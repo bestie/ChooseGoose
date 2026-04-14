@@ -12,7 +12,7 @@ BUILD_DIR = build/$(PLATFORM)
 STATIC ?= 1
 
 ifeq ($(OS), Darwin)
-	PREFIX=/opt/homebrew
+	SYS_PREFIX=/opt/homebrew
 
 	VENDOR_PREFIX := vendor/build/$(PLATFORM)
 
@@ -39,7 +39,7 @@ ifeq ($(OS), Darwin)
 		-framework ApplicationServices \
     -Wl,-rpath,@executable_path/../Frameworks
 else # Linux
-	PREFIX=/usr
+	SYS_PREFIX=/usr
 
 	VENDOR_PREFIX := vendor/build/$(PLATFORM)
 
@@ -118,8 +118,8 @@ SRC_DIR = src
 SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
-HOME ?=$(shell echo $$HOME)
-INSTALL_LOCATION ?= $(HOME)/bin/$(PROJECT_SHORT)
+PREFIX ?= /usr/local
+INSTALL_LOCATION ?= $(PREFIX)/bin/$(PROJECT_SHORT)
 
 # Default target compiles the library for the native platform without Docker
 .PHONY: choosegoose
@@ -359,7 +359,7 @@ test: $(TEST_EXECUTABLE)
 
 $(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.c
 	mkdir -p $(TEST_OBJ_DIR)
-	$(CC) $(CFLAGS) $(INCLUDES) -I$(PREFIX)/include/criterion -Isrc -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) -I$(SYS_PREFIX)/include/criterion -Isrc -c $< -o $@
 
 $(TEST_EXECUTABLE): $(TARGET) $(TEST_OBJECTS) $(TEST_SOURCES)
 	echo "Building tests"

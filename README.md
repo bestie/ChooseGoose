@@ -125,7 +125,7 @@ ls *.mp4 | choosegoose --hide-file-extensions=true --cover-images-dir=.imgs
 
 ## Installation on macOS
 
-Homebrew will quickly install a statically compiled binary with all the SDL dependencies baked in.
+Homebrew will quickly install a pre-compiled statically binary with all the SDL dependencies baked in.
 Currently only supporting Apple Silicon. Intel builds in the works.
 
 ```sh
@@ -143,29 +143,30 @@ ChooseGoose has no dependencies beyond SDL 1.2 which is already on the device so
 
 ## Installation on Linux
 
-Relatively easy on Debian variants, install SDL1.2 and compatible SDL_image, SDL_ttf versions.
+Compile it from source.
 
-Compile.
+This will produce a single binary, with only minimal system dependencies required.
+
 ```sh
-make goose
+sudo apt-get install build-essential pkg-config zlib1g-dev libx11-dev libxext-dev
+make choosegoose
+sudo make install
 ```
 
-Take the binary from build/Linux-your_arch-your_libc/bin/choosegoose and put it where you like.
+The first build downloads and compiles vendored SDL dependencies automatically. Subsequent builds skip this step. The binary is installed to `/usr/local/bin/choosegoose` by default, or override with `sudo make install PREFIX=/opt/somewhere`.
 
 ## Contributing
 
-ChooseGoose is written in C with the ancient SDL1.2 framework and renders to the Linux framebuffer device without hardware support.
+ChooseGoose is written in C with the ancient SDL1.2 framework and renders to the Linux framebuffer device without hardware support. The Makefile contains the flags to compile on macOS and render via Cocoa.
 
-The Makefile contains the flags to compile on macOS and render via Cocoa.
-
-To compile natively (requires libraries and C compiler)
+To compile natively (all SDL dependencies are built from source automatically):
 ```
-make goose
+make choosegoose
 ```
 
-To compile in Docker for Linux (various):
+To cross-compile for RG35XX in Docker:
 ```
-make all
+make docker-compile-rg35xx
 ```
 
 1. Fork this repo
