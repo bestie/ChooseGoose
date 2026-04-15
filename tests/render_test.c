@@ -129,7 +129,6 @@ Test(render_tests, selected_item_has_highlight_background) {
     enqueue_input(make_key_event(SDLK_ESCAPE));
     start_app(cs);
 
-    SDL_Surface* screen = cs->state->screen;
     int x = cs->config->left_padding + cs->config->menu_item_padding + 2;
     int y = cs->config->top_padding + cs->config->menu_item_padding;
 
