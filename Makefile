@@ -59,9 +59,10 @@ else # Linux
 		$(VENDOR_PREFIX)/lib/libpng.a \
 		-lz -lX11 -lXext -lpthread -ldl -lm
   else
-	CFLAGS += $(shell sdl-config --cflags 2>/dev/null)
-	LDFLAGS += $(shell sdl-config --libs 2>/dev/null) \
-		-lSDL_ttf -lSDL_image -lm
+	SDL_CFLAGS ?= $(shell sdl-config --cflags 2>/dev/null)
+	SDL_LIBS ?= $(shell sdl-config --libs 2>/dev/null) -lSDL_ttf -lSDL_image
+	CFLAGS += $(SDL_CFLAGS)
+	LDFLAGS += $(SDL_LIBS) -lm
   endif
 endif
 

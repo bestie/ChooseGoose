@@ -14,3 +14,5 @@ export C_INCLUDE_PATH=${PREFIX}/include:/usr/include/SDL
 export LIBRARY_PATH=${PREFIX}/lib
 export LD_LIBRARY_PATH=${PREFIX}/lib
 export QEMU_LD_PREFIX=$PREFIX
+export SDL_CFLAGS="-I/usr/include/SDL"
+export SDL_LIBS="-lSDL -lSDL_ttf -lSDL_image"
