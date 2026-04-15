@@ -4,6 +4,7 @@
 #include "state.h"
 #include "cli_opts.h"
 #include "main.h"
+#include "test_helpers.h"
 
 // Mock SDL functions
 int mock_sdl_init(Uint32 flags) {
@@ -25,25 +26,14 @@ int mock_sdl_enable_key_repeat(int delay, int interval) {
     return 0;
 }
 
-static int interval_ms = 200;
-static int tick_clock = 0;
-static int get_ticks_count = 0;
+int interval_ms = 200;
+int tick_clock = 0;
+int get_ticks_count = 0;
 
-typedef void (*TestHookFn)(void);
-
-static void noop(void) {
-}
-
-typedef struct {
-    TestHookFn pre_tick;
-    TestHookFn on_poll;
-    TestHookFn on_frame;
-} TestHooks;
-
-static TestHooks test_hooks = { .pre_tick = noop, .on_frame = noop, .on_poll = noop };
+TestHooks test_hooks = { .pre_tick = NULL, .on_frame = NULL, .on_poll = NULL };
 
 Uint32 mock_sdl_get_ticks(void) {
-    test_hooks.pre_tick();
+    if (test_hooks.pre_tick) test_hooks.pre_tick();
 
     get_ticks_count++;
     tick_clock = get_ticks_count * interval_ms;  // Arbitrary timestamp value
@@ -53,13 +43,7 @@ Uint32 mock_sdl_get_ticks(void) {
     return tick_clock;
 }
 
-typedef struct {
-    SDL_Event events[256];
-    int count;
-    int index;
-} EventQueue;
-
-static EventQueue input_q = { .count = 0, .index = 0 };
+EventQueue input_q = { .count = 0, .index = 0 };
 
 typedef struct {
     SDL_Event up_arrow;
@@ -109,14 +93,14 @@ int mock_sdl_poll_event(SDL_Event *event) {
     return 1;
 }
 
-static int frame_count = 0;
+int frame_count = 0;
 
 int mock_sdl_flip(SDL_Surface *screen) {
     SDL_Flip(screen);
 
     frame_count++;
 
-    test_hooks.on_frame();
+    if (test_hooks.on_frame) test_hooks.on_frame();
     return 0;
 }
 
@@ -279,18 +263,12 @@ void generate_test_menu_items(State* state, int item_count) {
     state->menu_items->count = item_count;
     state->menu_items->lines = malloc(sizeof(char*) * item_count);
 
-    for(int i=0; i < item_count; i++) { 
+    for(int i=0; i < item_count; i++) {
         char* str = malloc(sizeof(char*) * state->menu_items->max_length);
         sprintf(str, "Item %d", i);
         state->menu_items->lines[i] = str;
     }
 }
-
-// Config and state struct
-typedef struct ConfigAndState {
-    Config* config;
-    State* state;
-} ConfigAndState;
 
 char captured_stdout[255];
 
@@ -324,33 +302,8 @@ void count_frame(void) {
     printf("🖼 rendered frame n = %d\n", frame_count);
 }
 
-void enqueue_input(SDL_Event event) {
-    input_q.events[input_q.count] = event;
-    input_q.count++;
-}
-
-ConfigAndState* setup(void) {
-    ConfigAndState* config_and_state = malloc(sizeof(ConfigAndState));
-
-    Config* config = default_config();
-    config->user_inactivity_timeout_ms = 2000;
-    State* state = init_state();
-    generate_test_menu_items(state, 20);
-    set_log_file_pointer(stderr);
-
-    SDL_Interface* sdl = get_sdl_interface();
-    SDL_Interface* mock_sdl = get_mock_sdl_interface();
-    sdl->poll_event = mock_sdl->poll_event;
-    sdl->get_ticks = mock_sdl->get_ticks;
-    sdl->flip = mock_sdl->flip;
-
-    config_and_state->config = config;
-    config_and_state->state = state;
-    return config_and_state;
-}
-
 Test(main_tests, test_init) {
-    ConfigAndState* config_and_state = setup();
+    ConfigAndState* config_and_state = setup_default();
 
     enqueue_input(INPUTS.down_arrow);
     enqueue_input(INPUTS.down_arrow);
@@ -365,7 +318,7 @@ Test(main_tests, test_init) {
 }
 
 Test(main_tests, test_escape_quit) {
-    ConfigAndState* config_and_state = setup();
+    ConfigAndState* config_and_state = setup_default();
 
     enqueue_input(INPUTS.down_arrow);
     enqueue_input(INPUTS.esc_key);
