@@ -218,7 +218,7 @@ $(STAMP_DIR)/libpng: | $(STAMP_DIR)
 	@echo "==> Building libpng..."
 	cd $(VENDOR_DIR) && \
 		(test -d libpng-1.6.43 || \
-		(curl -LO https://download.sourceforge.net/libpng/libpng-1.6.43.tar.gz && \
+		(curl --retry 3 -LO https://download.sourceforge.net/libpng/libpng-1.6.43.tar.gz && \
 		tar xf libpng-1.6.43.tar.gz))
 	cd $(VENDOR_DIR)/libpng-1.6.43 && \
 		./configure \
@@ -234,7 +234,7 @@ $(STAMP_DIR)/freetype: $(STAMP_DIR)/libpng | $(STAMP_DIR)
 	@echo "==> Building freetype..."
 	cd $(VENDOR_DIR) && \
 		(test -d freetype-2.13.2 || \
-		(curl -LO https://download.savannah.gnu.org/releases/freetype/freetype-2.13.2.tar.gz && \
+		(curl --retry 3 -LO https://download.savannah.gnu.org/releases/freetype/freetype-2.13.2.tar.gz && \
 		tar xf freetype-2.13.2.tar.gz))
 	cd $(VENDOR_DIR)/freetype-2.13.2 && \
 		./configure \
