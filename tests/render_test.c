@@ -55,6 +55,59 @@ static void capture_highlight_pixel(void) {
     }
 }
 
+// ─── Title text is rendered ───
+
+static void set_title_text(Config* config) {
+    strcpy(config->title, "Pick a goose");
+}
+
+Test(render_tests, title_text_is_rendered) {
+    ConfigAndState* cs = setup_with_config(set_title_text);
+
+    enqueue_input(make_key_event(SDLK_ESCAPE));
+    start_app(cs);
+
+    cr_assert(text_was_rendered("Pick a goose"),
+              "title text 'Pick a goose' should have been rendered");
+}
+
+// ─── Number prefix prepends index to menu items ───
+
+static void enable_number_prefix(Config* config) {
+    config->prefix_with_number = 1;
+}
+
+Test(render_tests, number_prefix_prepends_index) {
+    ConfigAndState* cs = setup_with_config(enable_number_prefix);
+
+    enqueue_input(make_key_event(SDLK_ESCAPE));
+    start_app(cs);
+
+    // render() uses "%3d. %s" format, so item 0 becomes "  1. Item 0"
+    cr_assert(text_was_rendered("  1. Item 0"),
+              "first item should be rendered as '  1. Item 0'");
+    cr_assert(text_was_rendered("  2. Item 1"),
+              "second item should be rendered as '  2. Item 1'");
+}
+
+// ─── File extension hiding strips extensions ───
+
+Test(render_tests, hide_file_extensions_strips_extension) {
+    const char* items[] = { "movie.mp4", "song.flac", "readme.txt" };
+    ConfigAndState* cs = setup_with_items(items, 3);
+    cs->config->hide_file_extensions = 1;
+
+    enqueue_input(make_key_event(SDLK_ESCAPE));
+    start_app(cs);
+
+    cr_assert(text_was_rendered("movie"),
+              "'movie' should be rendered without extension");
+    cr_assert(!text_was_rendered("movie.mp4"),
+              "'movie.mp4' should NOT be rendered with extension");
+}
+
+// ─── Selected item background color renders at expected position ───
+
 static void set_highlight_color(Config* config) {
     config->text_selected_background_color = malloc(sizeof(Color));
     config->text_selected_background_color->r = 0xFF;
