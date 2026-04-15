@@ -65,7 +65,14 @@ jobs:
         path: Linux-arm-uclibcgnueabi.tar.gz
 
   build-macos:
-    runs-on: macos-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: macos-latest
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
 
     steps:
       - uses: actions/checkout@v6
@@ -75,7 +82,7 @@ jobs:
         id: cache-deps
         with:
           path: ./vendor
-          key: vendor-${{ hashFiles('Makefile') }}
+          key: vendor-${{ matrix.arch }}-${{ hashFiles('Makefile') }}
 
       - name: Compile dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
@@ -104,13 +111,13 @@ jobs:
         id: prepare-artifacts
         run: |
           platform=$(make echo-platform)
-          tarfile="$platform.tar.gz" 
+          tarfile="$platform.tar.gz"
           tar czf "$tarfile" "build/$platform/bin"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: macos-binaries
+          name: macos-${{ matrix.arch }}
           path: "*.tar.gz"
 
   release:
