@@ -40,7 +40,7 @@ jobs:
     - name: Compile binary
       run: |
         mkdir build
-        make docker-compile
+        make docker-compile-rg35xx
 
     - name: Compile demos
       run: |
