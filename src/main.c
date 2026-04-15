@@ -68,11 +68,13 @@ SDL_Interface sdl = {
 };
 
 char* str_lower(char* str) {
-    char* lstr = malloc(strlen(str));
+    int len = strlen(str);
+    char* lstr = malloc(len + 1);
 
-    for(int i=0; i < strlen(str); i++) {
+    for(int i=0; i < len; i++) {
         lstr[i] = tolower(str[i]);
     }
+    lstr[len] = '\0';
     return lstr;
 }
 

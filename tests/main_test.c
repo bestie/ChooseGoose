@@ -84,10 +84,9 @@ int mock_sdl_poll_event(SDL_Event *event) {
     }
 
     SDL_Event next_event = input_q.events[input_q.index];
-    printf("👇 sending next key event %d\n", input_q.index);
+    printf("👇 sending next event %d (type=%d)\n", input_q.index, next_event.type);
 
-    event->type = SDL_KEYDOWN;
-    event->key.keysym.sym = next_event.key.keysym.sym;
+    *event = next_event;
 
     input_q.index++;
     return 1;
@@ -212,8 +211,9 @@ char* text_surface_texts[1024];
 
 SDL_Surface* mock_ttf_rendertext_blended(TTF_Font *font, const char *text, SDL_Color fg) {
     SDL_Surface* text_surface = TTF_RenderText_Blended(font, text, fg);
+    printf("mock_ttf_rendertext_blended: text=%s surface=%p\n", text, (void*)text_surface);
     int i=0;
-    while(text_surfaces[i] != NULL) i++;
+    while(text_surface_texts[i] != NULL) i++;
     text_surfaces[i] = text_surface;
     text_surface_texts[i] = strdup(text);
     return text_surface;

@@ -190,6 +190,7 @@ static inline ConfigAndState* setup_default(void) {
     sdl->poll_event = mock_sdl->poll_event;
     sdl->get_ticks = mock_sdl->get_ticks;
     sdl->flip = mock_sdl->flip;
+    sdl->ttf_rendertext_blended = mock_sdl->ttf_rendertext_blended;
 
     cs->config = config;
     cs->state = state;
@@ -227,6 +228,7 @@ static inline ConfigAndState* setup_with_items(const char* items[], int count) {
     sdl->poll_event = mock_sdl->poll_event;
     sdl->get_ticks = mock_sdl->get_ticks;
     sdl->flip = mock_sdl->flip;
+    sdl->ttf_rendertext_blended = mock_sdl->ttf_rendertext_blended;
 
     cs->config = config;
     cs->state = state;
